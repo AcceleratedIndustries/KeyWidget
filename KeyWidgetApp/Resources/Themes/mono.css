@@ -1,0 +1,17 @@
+body.theme-mono {
+    --bg: #0c0c0c;
+    --fg: #d4d4c7;
+    --fg-secondary: #7fc97f;
+    --accent: #f4d35e;
+    --border: #2a2a2a;
+    --kbd-bg: transparent;
+    --kbd-fg: #f4d35e;
+    --kbd-border: transparent;
+    --font-sans: "JetBrains Mono", "SF Mono", Menlo, monospace;
+    --font-mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
+    --code-bg: #181818;
+}
+body.theme-mono kbd { border: none; background: transparent; padding: 0; }
+body.theme-mono h2::before { content: "# "; color: #666; }
+body.theme-mono table { border-radius: 0; }
+body.theme-mono tr:not(:last-child) td { border-bottom-style: dashed; }
