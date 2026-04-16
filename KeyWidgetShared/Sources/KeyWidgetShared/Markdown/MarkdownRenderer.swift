@@ -32,16 +32,19 @@ private struct HTMLVisitor: MarkupVisitor {
     }
 
     mutating func visitDocument(_ document: Document) -> String {
-        defaultVisit(document)
+        rawHTMLSuppressionDepth = 0
+        return defaultVisit(document)
     }
 
     mutating func visitHeading(_ heading: Heading) -> String {
+        rawHTMLSuppressionDepth = 0
         let level = max(1, min(6, heading.level))
         return "<h\(level)>\(defaultVisit(heading))</h\(level)>"
     }
 
     mutating func visitParagraph(_ paragraph: Paragraph) -> String {
-        "<p>\(defaultVisit(paragraph))</p>"
+        rawHTMLSuppressionDepth = 0
+        return "<p>\(defaultVisit(paragraph))</p>"
     }
 
     mutating func visitText(_ text: Text) -> String {
@@ -67,13 +70,24 @@ private struct HTMLVisitor: MarkupVisitor {
     }
 
     mutating func visitLink(_ link: Link) -> String {
-        let dest = escapeAttribute(link.destination ?? "")
-        return "<a href=\"\(dest)\" target=\"_blank\" rel=\"noopener\">\(defaultVisit(link))</a>"
+        let inner = defaultVisit(link)
+        let raw = link.destination ?? ""
+        guard let safe = sanitizedURL(raw) else {
+            // Scheme not allowed — drop the anchor, render inner text only.
+            return inner
+        }
+        let dest = escapeAttribute(safe)
+        return "<a href=\"\(dest)\" target=\"_blank\" rel=\"noopener\">\(inner)</a>"
     }
 
     mutating func visitImage(_ image: Image) -> String {
-        let src = escapeAttribute(image.source ?? "")
+        let raw = image.source ?? ""
         let alt = escapeAttribute(image.plainText)
+        guard let safe = sanitizedURL(raw) else {
+            // Scheme not allowed — drop the image entirely.
+            return ""
+        }
+        let src = escapeAttribute(safe)
         return "<img src=\"\(src)\" alt=\"\(alt)\"/>"
     }
 
@@ -86,6 +100,7 @@ private struct HTMLVisitor: MarkupVisitor {
     }
 
     mutating func visitListItem(_ item: ListItem) -> String {
+        rawHTMLSuppressionDepth = 0
         let checkbox: String
         switch item.checkbox {
         case .checked:
@@ -101,19 +116,23 @@ private struct HTMLVisitor: MarkupVisitor {
     }
 
     mutating func visitBlockQuote(_ quote: BlockQuote) -> String {
-        "<blockquote>\(defaultVisit(quote))</blockquote>"
+        rawHTMLSuppressionDepth = 0
+        return "<blockquote>\(defaultVisit(quote))</blockquote>"
     }
 
     mutating func visitCodeBlock(_ codeBlock: CodeBlock) -> String {
+        rawHTMLSuppressionDepth = 0
         let lang = codeBlock.language.map { " class=\"language-\(escapeAttribute($0))\"" } ?? ""
         return "<pre><code\(lang)>\(escapeHTML(codeBlock.code))</code></pre>"
     }
 
     mutating func visitThematicBreak(_ thematicBreak: ThematicBreak) -> String {
-        "<hr/>"
+        rawHTMLSuppressionDepth = 0
+        return "<hr/>"
     }
 
     mutating func visitTable(_ table: Table) -> String {
+        rawHTMLSuppressionDepth = 0
         var head = ""
         for cell in table.head.cells {
             head += "<th>\(defaultVisit(cell))</th>"
@@ -177,20 +196,75 @@ private struct HTMLVisitor: MarkupVisitor {
     }
 
     private func escapeAttribute(_ s: String) -> String {
-        escapeHTML(s).replacingOccurrences(of: "\"", with: "&quot;")
+        escapeHTML(s)
+            .replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "'", with: "&#39;")
     }
 
     private func isOpeningTag(_ raw: String) -> Bool {
         guard raw.hasPrefix("<"), raw.hasSuffix(">") else { return false }
         if raw.hasPrefix("</") { return false }
         if raw.hasPrefix("<!") || raw.hasPrefix("<?") { return false }
-        // Self-closing: `<br/>` or `<br />`
-        let beforeClose = raw.dropLast()
+        // Self-closing: `<br/>` or `<br />` — tolerate trailing whitespace before `>`.
+        let beforeClose = String(raw.dropLast()).trimmingCharacters(in: .whitespaces)
         if beforeClose.hasSuffix("/") { return false }
+        // HTML5 void elements never open a suppression scope; they're neutral.
+        if let name = tagElementName(raw),
+           Self.voidElements.contains(name.lowercased()) {
+            return false
+        }
         return true
     }
 
     private func isClosingTag(_ raw: String) -> Bool {
         raw.hasPrefix("</") && raw.hasSuffix(">")
+    }
+
+    /// Extract the element name from a raw tag string. Returns `nil` if the
+    /// input doesn't look like an opening tag.
+    private func tagElementName(_ raw: String) -> String? {
+        guard raw.hasPrefix("<"), !raw.hasPrefix("</"),
+              !raw.hasPrefix("<!"), !raw.hasPrefix("<?") else {
+            return nil
+        }
+        // Skip the leading '<'
+        let afterLT = raw.dropFirst()
+        var name = ""
+        for ch in afterLT {
+            if ch.isWhitespace || ch == ">" || ch == "/" { break }
+            name.append(ch)
+        }
+        return name.isEmpty ? nil : name
+    }
+
+    /// HTML5 void elements — self-closing semantics, even when written without `/`.
+    private static let voidElements: Set<String> = [
+        "area", "base", "br", "col", "embed", "hr", "img", "input",
+        "link", "meta", "param", "source", "track", "wbr"
+    ]
+
+    /// URL schemes permitted in `href` / `src`. Relative URLs (no scheme) are
+    /// always allowed. Anything else — including `javascript:` and `data:` —
+    /// is dropped to prevent XSS.
+    private static let allowedSchemes: Set<String> = [
+        "http", "https", "mailto", "keywidget"
+    ]
+
+    /// Returns the input URL string if its scheme is acceptable (or absent —
+    /// i.e. a relative URL), otherwise `nil`.
+    private func sanitizedURL(_ raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return trimmed }
+        // Match RFC 3986 scheme: ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ) ":"
+        let schemePattern = "^[a-zA-Z][a-zA-Z0-9+.\\-]*:"
+        if let range = trimmed.range(of: schemePattern, options: .regularExpression) {
+            let scheme = String(trimmed[range]).dropLast().lowercased() // drop trailing ':'
+            if Self.allowedSchemes.contains(String(scheme)) {
+                return trimmed
+            }
+            return nil
+        }
+        // No scheme — treat as a relative URL and allow it.
+        return trimmed
     }
 }
