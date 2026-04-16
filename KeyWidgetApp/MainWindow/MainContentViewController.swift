@@ -70,6 +70,7 @@ final class MainContentViewController: NSViewController {
     @objc private func themeChanged() {
         state = store.load()
         markdownView.apply(theme: state.theme)
+        WidgetReloader.reload()
     }
 
     private func closeTab(id: UUID) {
@@ -88,6 +89,7 @@ final class MainContentViewController: NSViewController {
         state = store.load()
         tabBar.setTabs(visibleTabs(), activeID: state.activeTabID)
         loadActiveTabContent()
+        WidgetReloader.reload()
     }
 
     private func visibleTabs() -> [TabRef] {
@@ -101,6 +103,7 @@ final class MainContentViewController: NSViewController {
         try? store.save(state)
         tabBar.updateActive(id)
         loadActiveTabContent()
+        WidgetReloader.reload()
     }
 
     private func loadActiveTabContent() {
@@ -122,6 +125,7 @@ final class MainContentViewController: NSViewController {
             if let md = try? String(contentsOf: url, encoding: .utf8) {
                 showMarkdown(md, baseURL: url.deletingLastPathComponent())
                 refreshTabTitle(from: md, tabID: tab.id)
+                WidgetReloader.reload()
                 startWatching(url)
             } else {
                 showMissing(path: url.path, tab: tab)
