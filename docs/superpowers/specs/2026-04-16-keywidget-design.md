@@ -247,6 +247,20 @@ KeyWidget.xcodeproj
         └── RendererTests.swift   (markdown → HTML snapshots)
 ```
 
+## Documentation
+
+**`README.md`** at the repo root. Matches the app's aesthetic: confident, designer-y, sparse. Not a hype-sheet with badges-for-the-sake-of-badges, no emoji vomit, no bullet-list novel. Suggested contents:
+
+- A short tagline under the project name.
+- A single pull-quote paragraph pitching what the app is and who it's for.
+- One hero screenshot (or three small ones, one per theme) — placeholder in v1, real screenshots once the app runs.
+- A *Getting started* section: Xcode version, `open KeyWidget.xcodeproj`, ⌘R. Three lines max.
+- A *Philosophy* section — two or three sentences on the "reference-first, no editing, respects your editor" ethos. Establishes voice.
+- A *Themes* section — name the three (Linear, iA Writer, Mono) with a one-line description each.
+- A *License* line at the bottom.
+
+The markdown itself should demonstrate restraint: careful heading hierarchy, meaningful whitespace, no decorative horizontal rules, no "## ✨ Features ✨".
+
 ## Testing
 
 **Unit tests** (in `KeyWidgetSharedTests`):
@@ -271,6 +285,7 @@ Rough dependency order — actual plan will come from the `writing-plans` step t
 9. Missing-file UI and edge cases.
 10. Rewrite the original `macos_keybinding_cheat_sheet.html` as `cheatsheet.md` and bundle it.
 11. Polish pass: empty state, hover states, animations, puff-of-smoke.
+12. Write `README.md` in the agreed voice, with screenshots of the finished app in all three themes.
 
 ## Deferred decisions
 
