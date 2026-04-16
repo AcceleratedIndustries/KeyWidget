@@ -10,7 +10,7 @@ final class MainContentViewController: NSViewController {
     private let divider = NSBox()
 
     override func loadView() {
-        let container = NSView()
+        let container = DropView()
         view = container
 
         divider.boxType = .separator
@@ -33,6 +33,14 @@ final class MainContentViewController: NSViewController {
             markdownView.topAnchor.constraint(equalTo: divider.bottomAnchor),
             markdownView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
+
+        container.registerForDraggedTypes([.fileURL])
+        container.onDrop = { [weak self] urls in
+            guard let self else { return }
+            let controller = (NSApp.delegate as? AppDelegate)?.tabController
+            for url in urls { _ = controller?.openFile(at: url) }
+            self.reload()
+        }
 
         tabBar.onSelect = { [weak self] id in self?.selectTab(id) }
         reload()
@@ -77,5 +85,20 @@ final class MainContentViewController: NSViewController {
                 markdownView.loadMarkdown("# Couldn't find this file", theme: state.theme)
             }
         }
+    }
+}
+
+private final class DropView: NSView {
+    var onDrop: (([URL]) -> Void)?
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        return sender.draggingPasteboard.canReadObject(forClasses: [NSURL.self], options: nil) ? .copy : []
+    }
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        guard let urls = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] else { return false }
+        let mdURLs = urls.filter { ["md","markdown","mdown","mdx"].contains($0.pathExtension.lowercased()) }
+        guard !mdURLs.isEmpty else { return false }
+        onDrop?(mdURLs)
+        return true
     }
 }
