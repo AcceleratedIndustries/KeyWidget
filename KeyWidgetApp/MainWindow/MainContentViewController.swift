@@ -43,11 +43,28 @@ final class MainContentViewController: NSViewController {
         }
 
         tabBar.onSelect = { [weak self] id in self?.selectTab(id) }
+        tabBar.onClose = { [weak self] id in self?.closeTab(id: id) }
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(closeActiveTab),
+            name: .closeActiveTabRequested, object: nil
+        )
         reload()
         NotificationCenter.default.addObserver(
             self, selector: #selector(reload),
             name: .tabsDidChange, object: nil
         )
+    }
+
+    private func closeTab(id: UUID) {
+        let controller = (NSApp.delegate as? AppDelegate)?.tabController
+        guard let tab = state.tabs.first(where: { $0.id == id }),
+              controller?.canClose(tab) == true else { return }
+        controller?.closeTab(id: id)
+        reload()
+    }
+
+    @objc private func closeActiveTab() {
+        closeTab(id: state.activeTabID)
     }
 
     @objc private func reload() {

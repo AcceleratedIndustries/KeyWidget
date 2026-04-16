@@ -60,4 +60,19 @@ final class TabController {
         defer { url.stopAccessingSecurityScopedResource() }
         return try? String(contentsOf: url, encoding: .utf8)
     }
+
+    func closeTab(id: UUID) {
+        var state = store.load()
+        guard let idx = state.tabs.firstIndex(where: { $0.id == id }) else { return }
+        let wasActive = state.activeTabID == id
+        state.tabs.remove(at: idx)
+        if wasActive, let fallback = state.tabs.first {
+            state.activeTabID = fallback.id
+        }
+        try? store.save(state)
+    }
+
+    func canClose(_ tab: TabRef) -> Bool {
+        tab.kind != .bundled
+    }
 }

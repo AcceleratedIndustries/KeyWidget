@@ -3,6 +3,7 @@ import KeyWidgetShared
 
 final class TabBarView: NSView {
     var onSelect: ((UUID) -> Void)?
+    var onClose: ((UUID) -> Void)?
 
     private let scrollView = NSScrollView()
     private let stack = NSStackView()
@@ -42,6 +43,10 @@ final class TabBarView: NSView {
             let item = TabBarItemView(tab: tab)
             item.setActive(tab.id == activeID)
             item.onClick = { [weak self] in self?.onSelect?(tab.id) }
+            item.onClose = { [weak self] in
+                guard let self, tab.kind != .bundled else { return }
+                self.onClose?(tab.id)
+            }
             return item
         }
         itemViews.forEach { stack.addArrangedSubview($0) }
