@@ -18,42 +18,175 @@ Change these if the final team ID / naming differs, but keep them consistent acr
 **Scope deferrals from the spec:**
 - **Launch at login** is listed in the spec's Preferences section as a toggle. It requires registering an `SMAppService.mainApp` helper and is genuinely tangential to v1's core flow. This plan **defers** it. To add later: one new Preferences toggle, one call to `SMAppService.mainApp.register()` / `.unregister()`, and the `com.apple.developer.service-management.managed-by-main-app` entitlement. No schema or architectural changes needed.
 
+**Build tool: xcodegen.** This plan uses [xcodegen](https://github.com/yonaskolb/XcodeGen) to generate the Xcode project from a YAML spec (`project.yml`). The `.xcodeproj` is a generated artifact and is gitignored — the source of truth is `project.yml` and the source directories. To regenerate the project after changes to `project.yml`, run `bin/gen` from the repo root. **This replaces the Xcode GUI setup steps originally described.** Source file additions inside existing directories (e.g., new `.swift` files) are picked up automatically via glob — no regen needed. Only structural changes (new target, new resource directory, entitlement change) require running `bin/gen`.
+
 ---
 
-## Task 1: Create the Xcode project and configure basic entitlements
+## Task 1: Bootstrap the project with xcodegen
 
 **Files:**
-- Create: `KeyWidget.xcodeproj/` (via Xcode GUI)
+- Create: `project.yml` (xcodegen spec)
+- Create: `bin/gen` (regen script)
 - Create: `KeyWidgetApp/App.swift`
 - Create: `KeyWidgetApp/AppDelegate.swift`
-- Create: `KeyWidgetApp/Info.plist` (modify generated)
-- Create: `KeyWidgetApp/KeyWidgetApp.entitlements`
+- Create: `KeyWidgetApp/Info.plist`
+- Create: `KeyWidgetApp/KeyWidget.entitlements`
+- Create: `KeyWidgetWidget/Placeholder.swift`
+- Create: `KeyWidgetWidget/Info.plist`
+- Create: `KeyWidgetWidget/KeyWidgetWidget.entitlements`
+- Create: `KeyWidgetShared/Package.swift`
+- Create: `KeyWidgetShared/Sources/KeyWidgetShared/Placeholder.swift`
+- Modify: `.gitignore`
 
-- [ ] **Step 1: Create the macOS App project in Xcode**
+- [ ] **Step 1: Install xcodegen**
 
-Open Xcode. File → New → Project → macOS → App.
-- Product Name: `KeyWidget`
-- Team: (your team)
-- Organization Identifier: `com.williamappleton`
-- Bundle Identifier (auto): `com.williamappleton.keywidget`
-- Interface: **SwiftUI**
-- Language: Swift
-- Storage: None
-- Include Tests: **checked**
+```bash
+brew install xcodegen
+xcodegen --version
+```
+Expected: version prints (≥ 2.40).
 
-Save to `/Users/will/src/KeyWidget/`. Xcode will create `KeyWidget.xcodeproj` and a `KeyWidget/` source folder.
+- [ ] **Step 2: Create the minimal Swift package so xcodegen can reference it**
 
-**Rename** the source folder from `KeyWidget/` to `KeyWidgetApp/` in Finder, then update the Xcode project to point to the new folder name: right-click the group → Show File Inspector → update the folder path. (Or just rename the group in Xcode, keeping the folder name in sync.)
+```bash
+cd /Users/will/src/KeyWidget
+mkdir -p KeyWidgetShared/Sources/KeyWidgetShared
+```
 
-- [ ] **Step 2: Set deployment target to macOS 14**
+Create `KeyWidgetShared/Package.swift`:
+```swift
+// swift-tools-version: 5.10
+import PackageDescription
 
-Project navigator → `KeyWidget` target → General tab → Minimum Deployments → macOS 14.0.
+let package = Package(
+    name: "KeyWidgetShared",
+    platforms: [.macOS(.v14)],
+    products: [
+        .library(name: "KeyWidgetShared", targets: ["KeyWidgetShared"]),
+    ],
+    targets: [
+        .target(name: "KeyWidgetShared"),
+    ]
+)
+```
 
-- [ ] **Step 3: Replace the generated `KeyWidgetApp.swift` with our app + delegate**
+Create `KeyWidgetShared/Sources/KeyWidgetShared/Placeholder.swift`:
+```swift
+public enum KeyWidgetShared {
+    public static let version = "0.1.0"
+}
+```
 
-Delete the generated `ContentView.swift`. Replace `KeyWidgetApp.swift` with two files:
+(The swift-markdown dependency and the test target are added in Task 2.)
 
-`KeyWidgetApp/App.swift`:
+- [ ] **Step 3: Write `project.yml`**
+
+Create `/Users/will/src/KeyWidget/project.yml`:
+```yaml
+name: KeyWidget
+options:
+  bundleIdPrefix: com.williamappleton
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+packages:
+  KeyWidgetShared:
+    path: KeyWidgetShared
+
+targets:
+  KeyWidget:
+    type: application
+    platform: macOS
+    sources:
+      - path: KeyWidgetApp
+    dependencies:
+      - package: KeyWidgetShared
+        product: KeyWidgetShared
+      - target: KeyWidgetWidget
+    info:
+      path: KeyWidgetApp/Info.plist
+      properties:
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        CFBundleURLTypes:
+          - CFBundleURLSchemes: [keywidget]
+            CFBundleURLName: com.williamappleton.keywidget.urlscheme
+            CFBundleTypeRole: Viewer
+    entitlements:
+      path: KeyWidgetApp/KeyWidget.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.files.user-selected.read-only: true
+        com.apple.security.files.bookmarks.app-scope: true
+        com.apple.security.application-groups:
+          - group.com.williamappleton.keywidget
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.williamappleton.keywidget
+        SWIFT_VERSION: "6.0"
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_STYLE: Automatic
+        COMBINE_HIDPI_IMAGES: YES
+
+  KeyWidgetWidget:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: KeyWidgetWidget
+    dependencies:
+      - package: KeyWidgetShared
+        product: KeyWidgetShared
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+    info:
+      path: KeyWidgetWidget/Info.plist
+      properties:
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: KeyWidgetWidget/KeyWidgetWidget.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.application-groups:
+          - group.com.williamappleton.keywidget
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.williamappleton.keywidget.widget
+        SWIFT_VERSION: "6.0"
+        SKIP_INSTALL: YES
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_STYLE: Automatic
+```
+
+- [ ] **Step 4: Write the regen script**
+
+```bash
+mkdir -p bin
+```
+
+Create `/Users/will/src/KeyWidget/bin/gen`:
+```sh
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")/.."
+xcodegen generate --spec project.yml
+```
+
+```bash
+chmod +x bin/gen
+```
+
+- [ ] **Step 5: Create the app target source files**
+
+```bash
+mkdir -p KeyWidgetApp
+```
+
+Create `KeyWidgetApp/App.swift`:
 ```swift
 import SwiftUI
 
@@ -70,7 +203,7 @@ struct KeyWidgetApp: App {
 }
 ```
 
-`KeyWidgetApp/AppDelegate.swift`:
+Create `KeyWidgetApp/AppDelegate.swift`:
 ```swift
 import AppKit
 
@@ -97,57 +230,116 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 ```
 
-- [ ] **Step 4: Configure the URL scheme in Info.plist**
-
-Select the `KeyWidget` target → Info tab → URL Types → `+`.
-- Identifier: `com.williamappleton.keywidget.urlscheme`
-- URL Schemes: `keywidget`
-- Role: Viewer
-
-- [ ] **Step 5: Configure App Sandbox entitlements**
-
-Select the target → Signing & Capabilities → `+ Capability` → **App Sandbox**. In the sandbox options enable:
-- User Selected File (Read Only)
-
-Then click `+ Capability` again → **App Groups** → `+` → add `group.com.williamappleton.keywidget`.
-
-Open the generated `KeyWidget.entitlements` file and add the bookmarks entitlement manually:
+Create `KeyWidgetApp/Info.plist` (xcodegen will merge its properties with what's in project.yml):
 ```xml
-<key>com.apple.security.files.bookmarks.app-scope</key>
-<true/>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict/>
+</plist>
 ```
 
-- [ ] **Step 6: Verify build and run**
+Create `KeyWidgetApp/KeyWidget.entitlements`:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict/>
+</plist>
+```
 
-Run: Product → Build (⌘B). Then ⌘R.
-Expected: the app launches and shows an empty window titled "KeyWidget". Close the window, then click the Dock icon — window reopens.
+(xcodegen writes the real entitlements on generate — the placeholder file just has to exist so the path resolves.)
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Create the widget target source files**
+
+```bash
+mkdir -p KeyWidgetWidget
+```
+
+Create `KeyWidgetWidget/Placeholder.swift` (minimal widget so the target compiles):
+```swift
+import SwiftUI
+import WidgetKit
+
+struct PlaceholderEntry: TimelineEntry { let date: Date }
+
+struct PlaceholderProvider: TimelineProvider {
+    func placeholder(in context: Context) -> PlaceholderEntry { PlaceholderEntry(date: .now) }
+    func getSnapshot(in context: Context, completion: @escaping (PlaceholderEntry) -> Void) {
+        completion(PlaceholderEntry(date: .now))
+    }
+    func getTimeline(in context: Context, completion: @escaping (Timeline<PlaceholderEntry>) -> Void) {
+        completion(Timeline(entries: [PlaceholderEntry(date: .now)], policy: .never))
+    }
+}
+
+struct PlaceholderView: View {
+    var entry: PlaceholderEntry
+    var body: some View { Text("KeyWidget").padding() }
+}
+
+@main
+struct KeyWidgetWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "KeyWidgetWidget", provider: PlaceholderProvider()) { entry in
+            PlaceholderView(entry: entry)
+        }
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+    }
+}
+```
+
+Create `KeyWidgetWidget/Info.plist` and `KeyWidgetWidget/KeyWidgetWidget.entitlements` as empty-dict plists (same shape as the app's placeholder files above).
+
+- [ ] **Step 7: Update `.gitignore`**
+
+Append to `/Users/will/src/KeyWidget/.gitignore`:
+```
+KeyWidget.xcodeproj/
+.build/
+.swiftpm/
+```
+
+- [ ] **Step 8: Generate the project**
+
+```bash
+cd /Users/will/src/KeyWidget
+./bin/gen
+```
+
+Expected: `Loaded project:` line followed by `Created project at KeyWidget.xcodeproj`. No errors.
+
+- [ ] **Step 9: Open and build**
+
+```bash
+open KeyWidget.xcodeproj
+```
+
+In Xcode, select the `KeyWidget` scheme, macOS destination, ⌘B. Expected: BUILD SUCCEEDED.
+
+Then ⌘R. Expected: an empty window titled "KeyWidget" appears. Close it, click the Dock icon — window reopens.
+
+- [ ] **Step 10: Commit**
 
 ```bash
 cd /Users/will/src/KeyWidget
 git add .
-git commit -m "feat: scaffold KeyWidget macOS app project"
+git commit -m "feat: scaffold KeyWidget with xcodegen (app + widget + shared package)"
 ```
 
 ---
 
-## Task 2: Create the KeyWidgetShared Swift package
+## Task 2: Add swift-markdown dependency and the test target to the shared package
+
+**Context:** Task 1 created a minimal `KeyWidgetShared` package with no dependencies and no test target, just enough for xcodegen to resolve. This task upgrades `Package.swift` to add the `swift-markdown` dependency and a test target, then verifies `swift test` passes.
 
 **Files:**
-- Create: `KeyWidgetShared/Package.swift`
-- Create: `KeyWidgetShared/Sources/KeyWidgetShared/Placeholder.swift`
+- Modify: `KeyWidgetShared/Package.swift`
 - Create: `KeyWidgetShared/Tests/KeyWidgetSharedTests/PlaceholderTests.swift`
 
-- [ ] **Step 1: Create the package directory and manifest**
+- [ ] **Step 1: Update `Package.swift` to add swift-markdown and the test target**
 
-```bash
-cd /Users/will/src/KeyWidget
-mkdir -p KeyWidgetShared/Sources/KeyWidgetShared
-mkdir -p KeyWidgetShared/Tests/KeyWidgetSharedTests
-```
-
-Create `KeyWidgetShared/Package.swift`:
+Replace `KeyWidgetShared/Package.swift` with:
 ```swift
 // swift-tools-version: 5.10
 import PackageDescription
@@ -176,13 +368,10 @@ let package = Package(
 )
 ```
 
-- [ ] **Step 2: Write a placeholder source and test so the package compiles**
+- [ ] **Step 2: Add the placeholder test**
 
-Create `KeyWidgetShared/Sources/KeyWidgetShared/Placeholder.swift`:
-```swift
-public enum KeyWidgetShared {
-    public static let version = "0.1.0"
-}
+```bash
+mkdir -p KeyWidgetShared/Tests/KeyWidgetSharedTests
 ```
 
 Create `KeyWidgetShared/Tests/KeyWidgetSharedTests/PlaceholderTests.swift`:
@@ -201,31 +390,26 @@ final class PlaceholderTests: XCTestCase {
 
 ```bash
 cd /Users/will/src/KeyWidget/KeyWidgetShared
-swift build
 swift test
 ```
 
-Expected: `Test Suite 'All tests' passed. Executed 1 test`
+Expected: `Test Suite 'All tests' passed. Executed 1 test` — the first run pulls `swift-markdown` and takes a minute; subsequent runs are fast.
 
-- [ ] **Step 4: Link the package to the Xcode app target**
+- [ ] **Step 4: Regenerate the Xcode project and verify the app still builds with the new dep**
 
-In Xcode: File → Add Package Dependencies… → Add Local… → choose `/Users/will/src/KeyWidget/KeyWidgetShared`.
-Then select the `KeyWidget` target → General → Frameworks, Libraries, and Embedded Content → `+` → `KeyWidgetShared`.
-
-Verify by adding this line temporarily to `AppDelegate.swift`:
-```swift
-import KeyWidgetShared
-// in applicationDidFinishLaunching, before creating the window:
-print("KeyWidgetShared version:", KeyWidgetShared.version)
+```bash
+cd /Users/will/src/KeyWidget
+./bin/gen
+xcodebuild -project KeyWidget.xcodeproj -scheme KeyWidget -destination 'platform=macOS' build | tail -5
 ```
 
-Build and run (⌘R). Expected: console prints `KeyWidgetShared version: 0.1.0`. Then remove the print.
+Expected: BUILD SUCCEEDED.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add .
-git commit -m "feat: add KeyWidgetShared package with swift-markdown dependency"
+git commit -m "feat: add swift-markdown dependency and test target to shared package"
 ```
 
 ---
@@ -1134,9 +1318,32 @@ Create `KeyWidgetApp/Resources/cheatsheet.md`:
 
 (Expand the remaining sections from the source HTML as needed — the translation is straightforward.)
 
-- [ ] **Step 2: Add the file to the Xcode app target**
+- [ ] **Step 2: Regenerate the Xcode project so xcodegen picks up the new resource**
 
-In Xcode: drag `cheatsheet.md` into the `KeyWidgetApp/Resources` group. Ensure "Copy items if needed" is unchecked (file is already in the folder), and **`KeyWidget` target** is checked in the "Add to targets" list.
+Because `cheatsheet.md` lives under `KeyWidgetApp/Resources/` which is inside the app target's `sources: [{ path: KeyWidgetApp }]` root, xcodegen automatically includes it in Copy Bundle Resources on the next regen.
+
+```bash
+cd /Users/will/src/KeyWidget
+./bin/gen
+```
+
+Expected: no errors. The file now appears in the app bundle at the bundle root.
+
+**Also** add `cheatsheet.md` to the widget target so the widget can read it for previews. Update `project.yml`'s `KeyWidgetWidget` target to add the single file as a resource reference:
+```yaml
+  KeyWidgetWidget:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: KeyWidgetWidget
+      - path: KeyWidgetApp/Resources/cheatsheet.md
+        buildPhase: resources
+```
+
+Regenerate again:
+```bash
+./bin/gen
+```
 
 - [ ] **Step 3: Verify the bundle contains the file**
 
@@ -1310,19 +1517,26 @@ body.theme-mono table { border-radius: 0; }
 body.theme-mono tr:not(:last-child) td { border-bottom-style: dashed; }
 ```
 
-- [ ] **Step 5: Add the Themes folder to the app target**
+- [ ] **Step 5: Regenerate the Xcode project and verify the CSS is bundled**
 
-In Xcode: drag `KeyWidgetApp/Resources/Themes/` into the project navigator. Ensure "Create folder references" is selected (so subdirectory structure is preserved in the bundle), and the `KeyWidget` target is checked.
+Because `project.yml` declares `sources: [{ path: KeyWidgetApp }]`, xcodegen picks up the new `.css` files automatically as Copy Bundle Resources. But xcodegen flattens folder structure by default, so the files end up at the bundle root (e.g., `shared.css` directly inside the app bundle, not under a `Themes/` subdirectory). This is what we want — `Bundle.main.url(forResource: "shared", withExtension: "css")` without `subdirectory`.
 
-- [ ] **Step 6: Verify the CSS is in the bundle**
+Update the reader call in `MarkdownWebView` (Task 10 references it) to omit the `subdirectory` argument — we'll write the correct form when we implement Task 10.
 
-Build (⌘B). Temporarily verify in `AppDelegate`:
+Regenerate and verify:
+```bash
+cd /Users/will/src/KeyWidget
+./bin/gen
+xcodebuild -project KeyWidget.xcodeproj -scheme KeyWidget -destination 'platform=macOS' build | tail -5
+```
+
+Expected: BUILD SUCCEEDED. Temporarily verify in `AppDelegate.applicationDidFinishLaunching`:
 ```swift
-if let url = Bundle.main.url(forResource: "shared", withExtension: "css", subdirectory: "Themes") {
+if let url = Bundle.main.url(forResource: "shared", withExtension: "css") {
     print("shared.css at:", url.path)
 }
 ```
-Run, remove the print.
+Run, confirm the path prints inside the .app bundle, remove the print.
 
 - [ ] **Step 7: Commit**
 
@@ -1406,7 +1620,7 @@ final class MarkdownWebView: NSView {
     }
 
     private static func readCSS(_ name: String) -> String {
-        guard let url = Bundle.main.url(forResource: name, withExtension: "css", subdirectory: "Themes"),
+        guard let url = Bundle.main.url(forResource: name, withExtension: "css"),
               let css = try? String(contentsOf: url, encoding: .utf8) else {
             return ""
         }
@@ -2777,29 +2991,22 @@ git commit -m "feat: handle keywidget:// deep links"
 ## Task 22: Widget extension — provider, entry, and themed views
 
 **Files:**
-- Create: `KeyWidgetWidget/` target (via Xcode)
+- Modify: `KeyWidgetWidget/Placeholder.swift` → delete, replace with the four files below
 - Create: `KeyWidgetWidget/Widget.swift`
 - Create: `KeyWidgetWidget/Provider.swift`
 - Create: `KeyWidgetWidget/Entry.swift`
 - Create: `KeyWidgetWidget/EntryView.swift`
 
-- [ ] **Step 1: Add the widget extension target**
+- [ ] **Step 1: Delete the Placeholder widget scaffolded in Task 1**
 
-In Xcode: File → New → Target → iOS + macOS → Widget Extension.
-- Product Name: `KeyWidgetWidget`
-- Include Configuration Intent: **unchecked**
-- Embed in Application: KeyWidget
+The widget target already exists (defined in `project.yml`, scaffolded with placeholder sources in Task 1), with App Sandbox + App Group + KeyWidgetShared dependency + WidgetKit and SwiftUI SDKs wired up. Its `cheatsheet.md` resource was added via `project.yml` in Task 8.
 
-Xcode creates the widget target. Delete the generated template sources (we'll write our own).
+```bash
+cd /Users/will/src/KeyWidget
+rm KeyWidgetWidget/Placeholder.swift
+```
 
-In the widget target's Signing & Capabilities:
-- Enable App Sandbox
-- Enable App Groups → add `group.com.williamappleton.keywidget`
-
-Link `KeyWidgetShared`:
-- Widget target → General → Frameworks and Libraries → `+` → `KeyWidgetShared`.
-
-Deployment: macOS 14.
+We'll replace it with the real widget implementation in the next steps.
 
 - [ ] **Step 2: Implement Entry, Provider, and EntryView**
 
