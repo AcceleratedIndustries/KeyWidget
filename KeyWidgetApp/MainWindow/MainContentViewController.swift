@@ -36,9 +36,13 @@ final class MainContentViewController: NSViewController {
 
         tabBar.onSelect = { [weak self] id in self?.selectTab(id) }
         reload()
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(reload),
+            name: .tabsDidChange, object: nil
+        )
     }
 
-    private func reload() {
+    @objc private func reload() {
         state = store.load()
         tabBar.setTabs(visibleTabs(), activeID: state.activeTabID)
         loadActiveTabContent()
@@ -66,8 +70,12 @@ final class MainContentViewController: NSViewController {
                 markdownView.loadMarkdown(md, theme: state.theme)
             }
         case .userFile:
-            // Will be implemented in Task 13 (security-scoped bookmark resolution)
-            markdownView.loadMarkdown("Loading not yet implemented for user files.", theme: state.theme)
+            let controller = (NSApp.delegate as? AppDelegate)?.tabController
+            if let md = controller.flatMap({ $0.readContents(of: tab) }) {
+                markdownView.loadMarkdown(md, theme: state.theme)
+            } else {
+                markdownView.loadMarkdown("# Couldn't find this file", theme: state.theme)
+            }
         }
     }
 }
