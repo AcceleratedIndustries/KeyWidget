@@ -12,6 +12,7 @@ final class MainContentViewController: NSViewController {
     private let divider = NSBox()
     private var watcher: FileWatcher?
     private var missingVC: MissingFileViewController?
+    private var emptyView: EmptyStateView?
 
     override func loadView() {
         let container = DropView()
@@ -88,8 +89,33 @@ final class MainContentViewController: NSViewController {
     @objc private func reload() {
         state = store.load()
         tabBar.setTabs(visibleTabs(), activeID: state.activeTabID)
-        loadActiveTabContent()
+        if visibleTabs().isEmpty {
+            showEmptyState()
+        } else {
+            emptyView?.removeFromSuperview()
+            emptyView = nil
+            loadActiveTabContent()
+        }
         WidgetReloader.reload()
+    }
+
+    private func showEmptyState() {
+        missingVC?.view.removeFromSuperview()
+        missingVC?.removeFromParent()
+        missingVC = nil
+        markdownView.removeFromSuperview()
+        if emptyView == nil {
+            let v = EmptyStateView()
+            v.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(v)
+            NSLayoutConstraint.activate([
+                v.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                v.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                v.topAnchor.constraint(equalTo: divider.bottomAnchor),
+                v.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            ])
+            emptyView = v
+        }
     }
 
     private func visibleTabs() -> [TabRef] {

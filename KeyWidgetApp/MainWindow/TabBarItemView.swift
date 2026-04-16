@@ -12,6 +12,13 @@ final class TabBarItemView: NSView {
     init(tab: TabRef) {
         self.tab = tab
         super.init(frame: .zero)
+        wantsLayer = true
+        let tracking = NSTrackingArea(
+            rect: .zero,
+            options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+            owner: self, userInfo: nil
+        )
+        addTrackingArea(tracking)
         label.stringValue = tab.displayTitle.isEmpty ? "Untitled" : tab.displayTitle
         label.font = NSFont.systemFont(ofSize: 12, weight: .medium)
         label.textColor = .secondaryLabelColor
@@ -22,6 +29,13 @@ final class TabBarItemView: NSView {
             label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             label.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        layer?.backgroundColor = NSColor.labelColor.withAlphaComponent(0.04).cgColor
+    }
+    override func mouseExited(with event: NSEvent) {
+        layer?.backgroundColor = nil
     }
 
     required init?(coder: NSCoder) { fatalError() }
