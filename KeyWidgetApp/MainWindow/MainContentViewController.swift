@@ -1,6 +1,8 @@
 import AppKit
 import KeyWidgetShared
+import UniformTypeIdentifiers
 
+@MainActor
 final class MainContentViewController: NSViewController {
     private let store = SharedStore()
     private var state: Store = .defaultStore
@@ -9,6 +11,7 @@ final class MainContentViewController: NSViewController {
     private let markdownView = MarkdownWebView()
     private let divider = NSBox()
     private var watcher: FileWatcher?
+    private var missingVC: MissingFileViewController?
 
     override func loadView() {
         let container = DropView()
@@ -106,23 +109,78 @@ final class MainContentViewController: NSViewController {
         case .bundled:
             if let url = Bundle.main.url(forResource: "cheatsheet", withExtension: "md"),
                let md = try? String(contentsOf: url, encoding: .utf8) {
-                markdownView.loadMarkdown(md, theme: state.theme)
+                showMarkdown(md, baseURL: nil)
             }
         case .userFile:
             let controller = (NSApp.delegate as? AppDelegate)?.tabController
             guard let bookmark = tab.bookmark, let url = controller?.resolveBookmark(bookmark) else {
-                markdownView.loadMarkdown("# Couldn't find this file", theme: state.theme)
+                showMissing(path: "", tab: tab)
                 return
             }
             _ = url.startAccessingSecurityScopedResource()
             defer { url.stopAccessingSecurityScopedResource() }
             if let md = try? String(contentsOf: url, encoding: .utf8) {
-                markdownView.loadMarkdown(md, theme: state.theme, baseURL: url.deletingLastPathComponent())
+                showMarkdown(md, baseURL: url.deletingLastPathComponent())
                 refreshTabTitle(from: md, tabID: tab.id)
                 startWatching(url)
             } else {
-                markdownView.loadMarkdown("# Couldn't find this file", theme: state.theme)
+                showMissing(path: url.path, tab: tab)
             }
+        }
+    }
+
+    private func showMarkdown(_ md: String, baseURL: URL?) {
+        missingVC?.view.removeFromSuperview()
+        missingVC?.removeFromParent()
+        missingVC = nil
+        if markdownView.superview == nil { addMarkdownView() }
+        markdownView.loadMarkdown(md, theme: state.theme, baseURL: baseURL)
+    }
+
+    private func showMissing(path: String, tab: TabRef) {
+        markdownView.removeFromSuperview()
+        missingVC?.view.removeFromSuperview()
+        missingVC?.removeFromParent()
+        let vc = MissingFileViewController()
+        vc.pathHint = path
+        vc.onLocate = { [weak self] in self?.relink(tab: tab) }
+        vc.onRemove = { [weak self] in self?.closeTab(id: tab.id) }
+        addChild(vc)
+        vc.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(vc.view)
+        NSLayoutConstraint.activate([
+            vc.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            vc.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            vc.view.topAnchor.constraint(equalTo: tabBar.bottomAnchor),
+            vc.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+        missingVC = vc
+    }
+
+    private func addMarkdownView() {
+        view.addSubview(markdownView)
+        markdownView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            markdownView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            markdownView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            markdownView.topAnchor.constraint(equalTo: divider.bottomAnchor),
+            markdownView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+    }
+
+    private func relink(tab: TabRef) {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [UTType(filenameExtension: "md")!]
+        panel.begin { [weak self] response in
+            guard response == .OK, let url = panel.url else { return }
+            guard let controller = (NSApp.delegate as? AppDelegate)?.tabController,
+                  let bookmark = controller.createBookmark(for: url) else { return }
+            var state = self?.store.load() ?? .defaultStore
+            if let idx = state.tabs.firstIndex(where: { $0.id == tab.id }) {
+                state.tabs[idx].bookmark = bookmark
+                try? self?.store.save(state)
+            }
+            self?.reload()
         }
     }
 
