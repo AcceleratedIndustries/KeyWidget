@@ -8,6 +8,7 @@ final class MainContentViewController: NSViewController {
     private let tabBar = TabBarView()
     private let markdownView = MarkdownWebView()
     private let divider = NSBox()
+    private var watcher: FileWatcher?
 
     override func loadView() {
         let container = DropView()
@@ -109,12 +110,42 @@ final class MainContentViewController: NSViewController {
             }
         case .userFile:
             let controller = (NSApp.delegate as? AppDelegate)?.tabController
-            if let md = controller.flatMap({ $0.readContents(of: tab) }) {
-                markdownView.loadMarkdown(md, theme: state.theme)
+            guard let bookmark = tab.bookmark, let url = controller?.resolveBookmark(bookmark) else {
+                markdownView.loadMarkdown("# Couldn't find this file", theme: state.theme)
+                return
+            }
+            _ = url.startAccessingSecurityScopedResource()
+            defer { url.stopAccessingSecurityScopedResource() }
+            if let md = try? String(contentsOf: url, encoding: .utf8) {
+                markdownView.loadMarkdown(md, theme: state.theme, baseURL: url.deletingLastPathComponent())
+                refreshTabTitle(from: md, tabID: tab.id)
+                startWatching(url)
             } else {
                 markdownView.loadMarkdown("# Couldn't find this file", theme: state.theme)
             }
         }
+    }
+
+    private func startWatching(_ url: URL) {
+        watcher?.stop()
+        watcher = FileWatcher(url: url) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                self?.loadActiveTabContent()
+            }
+        }
+        watcher?.start()
+    }
+
+    private func refreshTabTitle(from markdown: String, tabID: UUID) {
+        let (title, _) = MarkdownPreview.extract(from: markdown)
+        guard !title.isEmpty else { return }
+        var s = store.load()
+        guard let idx = s.tabs.firstIndex(where: { $0.id == tabID }),
+              s.tabs[idx].displayTitle != title else { return }
+        s.tabs[idx].displayTitle = title
+        try? store.save(s)
+        state = s
+        tabBar.setTabs(visibleTabs(), activeID: state.activeTabID)
     }
 }
 
