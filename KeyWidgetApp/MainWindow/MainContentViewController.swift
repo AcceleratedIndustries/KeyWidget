@@ -44,6 +44,10 @@ final class MainContentViewController: NSViewController {
 
         tabBar.onSelect = { [weak self] id in self?.selectTab(id) }
         tabBar.onClose = { [weak self] id in self?.closeTab(id: id) }
+        tabBar.onReorder = { [weak self] id, idx in
+            (NSApp.delegate as? AppDelegate)?.tabController.moveTab(id: id, toIndex: idx)
+            self?.reload()
+        }
         NotificationCenter.default.addObserver(
             self, selector: #selector(closeActiveTab),
             name: .closeActiveTabRequested, object: nil

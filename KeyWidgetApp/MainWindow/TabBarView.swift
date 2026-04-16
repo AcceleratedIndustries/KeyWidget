@@ -4,6 +4,18 @@ import KeyWidgetShared
 final class TabBarView: NSView {
     var onSelect: ((UUID) -> Void)?
     var onClose: ((UUID) -> Void)?
+    var onReorder: ((UUID, Int) -> Void)?
+
+    func reorderDidEnd(draggedTabID: UUID, toPointInSelf point: NSPoint) {
+        // point may be in this view's bounds or inside the scroll view's stack.
+        // Project all item mid-X coords into this view's coordinate system.
+        let xs = itemViews.map { item -> CGFloat in
+            let f = item.convert(item.bounds, to: self)
+            return f.midX
+        }
+        let targetIndex = xs.firstIndex(where: { point.x < $0 }) ?? itemViews.count
+        onReorder?(draggedTabID, targetIndex)
+    }
 
     private let scrollView = NSScrollView()
     private let stack = NSStackView()

@@ -75,4 +75,21 @@ final class TabController {
     func canClose(_ tab: TabRef) -> Bool {
         tab.kind != .bundled
     }
+
+    func moveTab(id: UUID, toIndex targetIndex: Int) {
+        var state = store.load()
+        guard let fromIndex = state.tabs.firstIndex(where: { $0.id == id }) else { return }
+        let moved = state.tabs.remove(at: fromIndex)
+        // Bundled tab must stay at index 0; clamp target accordingly
+        let bundledAtZero = state.tabs.first?.kind == .bundled
+        let clampedLow = bundledAtZero ? 1 : 0
+        let clampedHigh = state.tabs.count
+        let clamped = max(clampedLow, min(clampedHigh, targetIndex > fromIndex ? targetIndex - 1 : targetIndex))
+        if moved.kind == .bundled {
+            state.tabs.insert(moved, at: 0)
+        } else {
+            state.tabs.insert(moved, at: clamped)
+        }
+        try? store.save(state)
+    }
 }

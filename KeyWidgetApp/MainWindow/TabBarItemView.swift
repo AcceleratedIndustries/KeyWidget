@@ -84,10 +84,25 @@ extension TabBarItemView: NSDraggingSource {
 
     func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
         guard let window = self.window else { return }
-        let windowFrame = window.frame
-        if !NSPointInRect(screenPoint, windowFrame) {
+        let windowPoint = window.convertPoint(fromScreen: screenPoint)
+        let hostTabBar = self.enclosingTabBar()
+
+        if let hostTabBar {
+            let localInBar = hostTabBar.convert(windowPoint, from: nil)
+            if hostTabBar.bounds.contains(localInBar) {
+                hostTabBar.reorderDidEnd(draggedTabID: tab.id, toPointInSelf: localInBar)
+                return
+            }
+        }
+        if !NSPointInRect(screenPoint, window.frame) {
             NSAnimationEffect.poof.show(centeredAt: screenPoint, size: NSSize(width: 32, height: 32))
             onClose?()
         }
+    }
+
+    private func enclosingTabBar() -> TabBarView? {
+        var v: NSView? = self
+        while let cur = v { if let bar = cur as? TabBarView { return bar }; v = cur.superview }
+        return nil
     }
 }
