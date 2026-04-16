@@ -50,6 +50,8 @@ targets:
     platform: macOS
     sources:
       - path: KeyWidgetWidget
+      - path: KeyWidgetApp/Resources/cheatsheet.md
+        buildPhase: resources
     dependencies:
       - package: KeyWidgetShared
         product: KeyWidgetShared
