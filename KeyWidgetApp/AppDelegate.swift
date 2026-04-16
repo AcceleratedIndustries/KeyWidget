@@ -76,6 +76,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fileItem.submenu = fileMenu
         main.addItem(fileItem)
 
+        // View menu
+        let viewItem = NSMenuItem()
+        let viewMenu = NSMenu(title: "View")
+        let themeSubmenu = NSMenu(title: "Theme")
+        for theme in Theme.allCases {
+            let mi = NSMenuItem(title: theme.displayName, action: #selector(AppDelegate.selectTheme(_:)), keyEquivalent: "")
+            mi.representedObject = theme.rawValue
+            themeSubmenu.addItem(mi)
+        }
+        let themeItem = NSMenuItem(title: "Theme", action: nil, keyEquivalent: "")
+        themeItem.submenu = themeSubmenu
+        viewMenu.addItem(themeItem)
+        viewItem.submenu = viewMenu
+        main.addItem(viewItem)
+
         return main
+    }
+
+    @objc func selectTheme(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let theme = Theme(rawValue: raw) else { return }
+        let store = SharedStore()
+        var s = store.load()
+        s.theme = theme
+        try? store.save(s)
+        NotificationCenter.default.post(name: .themeDidChange, object: nil)
     }
 }

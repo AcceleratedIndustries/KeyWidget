@@ -52,11 +52,20 @@ final class MainContentViewController: NSViewController {
             self, selector: #selector(closeActiveTab),
             name: .closeActiveTabRequested, object: nil
         )
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(themeChanged),
+            name: .themeDidChange, object: nil
+        )
         reload()
         NotificationCenter.default.addObserver(
             self, selector: #selector(reload),
             name: .tabsDidChange, object: nil
         )
+    }
+
+    @objc private func themeChanged() {
+        state = store.load()
+        markdownView.apply(theme: state.theme)
     }
 
     private func closeTab(id: UUID) {
