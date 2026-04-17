@@ -10,13 +10,11 @@ struct KeyWidgetEntryView: View {
     var body: some View {
         let palette = WidgetPalette.for(entry.theme)
 
-        ZStack {
-            palette.background.ignoresSafeArea()
-            content
-                .padding(family == .systemSmall ? 10 : 14)
-                .foregroundStyle(palette.foreground)
-        }
-        .widgetURL(DeepLink.openTabURL(id: entry.tabID))
+        content
+            .padding(family == .systemSmall ? 10 : 14)
+            .foregroundStyle(palette.foreground)
+            .containerBackground(for: .widget) { palette.background }
+            .widgetURL(DeepLink.openTabURL(id: entry.tabID))
     }
 
     @ViewBuilder
