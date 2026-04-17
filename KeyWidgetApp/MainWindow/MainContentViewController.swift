@@ -40,12 +40,14 @@ final class MainContentViewController: NSViewController {
         ])
 
         container.registerForDraggedTypes([.fileURL])
-        container.onDrop = { [weak self] urls in
+        let handleDrop: ([URL]) -> Void = { [weak self] urls in
             guard let self else { return }
             let controller = (NSApp.delegate as? AppDelegate)?.tabController
             for url in urls { _ = controller?.openFile(at: url) }
             self.reload()
         }
+        container.onDrop = handleDrop
+        markdownView.onDrop = handleDrop
 
         tabBar.onSelect = { [weak self] id in self?.selectTab(id) }
         tabBar.onClose = { [weak self] id in self?.closeTab(id: id) }

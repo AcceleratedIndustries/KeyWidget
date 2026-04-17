@@ -9,9 +9,11 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
     private var currentTheme: Theme = .iaWriter
     private let log = Logger(subsystem: "com.williamappleton.keywidget", category: "MarkdownWebView")
 
+    var onDrop: (([URL]) -> Void)?
+
     override init(frame frameRect: NSRect) {
         let config = WKWebViewConfiguration()
-        config.defaultWebpagePreferences.allowsContentJavaScript = false
+        config.defaultWebpagePreferences.allowsContentJavaScript = true
         self.webView = WKWebView(frame: .zero, configuration: config)
         super.init(frame: frameRect)
         addSubview(webView)
@@ -26,9 +28,25 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
             webView.underPageBackgroundColor = .clear
         }
         webView.navigationDelegate = self
+        // Let file-URL drops land on MarkdownWebView, not on WKWebView's own drag handling.
+        webView.unregisterDraggedTypes()
+        registerForDraggedTypes([.fileURL])
+        log.info("MarkdownWebView init, frame=\(NSStringFromRect(frameRect), privacy: .public)")
     }
 
     required init?(coder: NSCoder) { fatalError() }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        sender.draggingPasteboard.canReadObject(forClasses: [NSURL.self], options: nil) ? .copy : []
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        guard let urls = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] else { return false }
+        let mdURLs = urls.filter { ["md","markdown","mdown","mdx"].contains($0.pathExtension.lowercased()) }
+        guard !mdURLs.isEmpty else { return false }
+        onDrop?(mdURLs)
+        return true
+    }
 
     func loadMarkdown(_ markdown: String, theme: Theme, baseURL: URL? = nil) {
         self.currentTheme = theme
