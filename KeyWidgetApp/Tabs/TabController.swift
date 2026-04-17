@@ -1,8 +1,10 @@
 import AppKit
 import KeyWidgetShared
+import os
 
 final class TabController {
     private let store = SharedStore()
+    private let log = Logger(subsystem: "com.williamappleton.keywidget", category: "TabController")
 
     func openFile(at url: URL) -> TabRef? {
         let absolute = url.resolvingSymlinksInPath().standardizedFileURL
@@ -35,11 +37,16 @@ final class TabController {
     }
 
     func createBookmark(for url: URL) -> Data? {
-        try? url.bookmarkData(
-            options: [.withSecurityScope],
-            includingResourceValuesForKeys: nil,
-            relativeTo: nil
-        )
+        do {
+            return try url.bookmarkData(
+                options: [.withSecurityScope],
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil
+            )
+        } catch {
+            log.error("bookmarkData failed for \(url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
     }
 
     func resolveBookmark(_ data: Data) -> URL? {

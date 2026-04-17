@@ -148,7 +148,10 @@ final class DropAwareWebView: WKWebView {
     }
 
     private func fileURLs(from sender: NSDraggingInfo) -> [URL] {
-        guard let urls = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] else { return [] }
+        let options: [NSPasteboard.ReadingOptionKey: Any] = [
+            .urlReadingFileURLsOnly: true
+        ]
+        guard let urls = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: options) as? [URL] else { return [] }
         return urls.filter { ["md","markdown","mdown","mdx"].contains($0.pathExtension.lowercased()) }
     }
 }
