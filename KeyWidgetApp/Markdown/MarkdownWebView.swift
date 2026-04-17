@@ -4,7 +4,7 @@ import KeyWidgetShared
 import os
 
 final class MarkdownWebView: NSView, WKNavigationDelegate {
-    let webView: WKWebView
+    let webView: DropAwareWebView
     private let renderer = MarkdownRenderer()
     private var currentTheme: Theme = .iaWriter
     private let log = Logger(subsystem: "com.williamappleton.keywidget", category: "MarkdownWebView")
@@ -14,7 +14,7 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
     override init(frame frameRect: NSRect) {
         let config = WKWebViewConfiguration()
         config.defaultWebpagePreferences.allowsContentJavaScript = true
-        self.webView = WKWebView(frame: .zero, configuration: config)
+        self.webView = DropAwareWebView(frame: .zero, configuration: config)
         super.init(frame: frameRect)
         addSubview(webView)
         webView.translatesAutoresizingMaskIntoConstraints = false
@@ -28,25 +28,15 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
             webView.underPageBackgroundColor = .clear
         }
         webView.navigationDelegate = self
-        // Let file-URL drops land on MarkdownWebView, not on WKWebView's own drag handling.
-        webView.unregisterDraggedTypes()
-        registerForDraggedTypes([.fileURL])
+        webView.onFileDrop = { [weak self] urls in self?.onDrop?(urls) }
         log.info("MarkdownWebView init, frame=\(NSStringFromRect(frameRect), privacy: .public)")
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
-    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        sender.draggingPasteboard.canReadObject(forClasses: [NSURL.self], options: nil) ? .copy : []
-    }
-
-    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        guard let urls = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] else { return false }
-        let mdURLs = urls.filter { ["md","markdown","mdown","mdx"].contains($0.pathExtension.lowercased()) }
-        guard !mdURLs.isEmpty else { return false }
-        onDrop?(mdURLs)
-        return true
-    }
+    func zoomIn()   { webView.pageZoom = min(webView.pageZoom + 0.1, 3.0) }
+    func zoomOut()  { webView.pageZoom = max(webView.pageZoom - 0.1, 0.5) }
+    func zoomReset() { webView.pageZoom = 1.0 }
 
     func loadMarkdown(_ markdown: String, theme: Theme, baseURL: URL? = nil) {
         self.currentTheme = theme
@@ -110,5 +100,39 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
             return ""
         }
         return css
+    }
+}
+
+/// WKWebView subclass that lets us handle file-URL drops. WKWebView registers
+/// its own drag types on every navigation; the only reliable way to intercept
+/// drops on the webview's surface is to override the NSDraggingDestination
+/// methods directly on the WKWebView subclass.
+final class DropAwareWebView: WKWebView {
+    var onFileDrop: (([URL]) -> Void)?
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        if sender.draggingPasteboard.canReadObject(forClasses: [NSURL.self], options: nil),
+           fileURLs(from: sender).isEmpty == false {
+            return .copy
+        }
+        return super.draggingEntered(sender)
+    }
+
+    override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        fileURLs(from: sender).isEmpty == false || super.prepareForDragOperation(sender)
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        let urls = fileURLs(from: sender)
+        if !urls.isEmpty {
+            onFileDrop?(urls)
+            return true
+        }
+        return super.performDragOperation(sender)
+    }
+
+    private func fileURLs(from sender: NSDraggingInfo) -> [URL] {
+        guard let urls = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] else { return [] }
+        return urls.filter { ["md","markdown","mdown","mdx"].contains($0.pathExtension.lowercased()) }
     }
 }

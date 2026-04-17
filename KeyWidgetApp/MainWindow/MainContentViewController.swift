@@ -63,11 +63,24 @@ final class MainContentViewController: NSViewController {
             self, selector: #selector(themeChanged),
             name: .themeDidChange, object: nil
         )
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(handleZoom(_:)),
+            name: .zoomRequested, object: nil
+        )
         reload()
         NotificationCenter.default.addObserver(
             self, selector: #selector(reload),
             name: .tabsDidChange, object: nil
         )
+    }
+
+    @objc private func handleZoom(_ note: Notification) {
+        switch note.object as? String {
+        case "in":    markdownView.zoomIn()
+        case "out":   markdownView.zoomOut()
+        case "reset": markdownView.zoomReset()
+        default:      break
+        }
     }
 
     @objc private func themeChanged() {

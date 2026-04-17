@@ -110,11 +110,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let themeItem = NSMenuItem(title: "Theme", action: nil, keyEquivalent: "")
         themeItem.submenu = themeSubmenu
         viewMenu.addItem(themeItem)
+        viewMenu.addItem(.separator())
+        let zoomIn = NSMenuItem(title: "Zoom In", action: #selector(AppDelegate.zoomIn(_:)), keyEquivalent: "+")
+        zoomIn.keyEquivalentModifierMask = [.command]
+        viewMenu.addItem(zoomIn)
+        let zoomOut = NSMenuItem(title: "Zoom Out", action: #selector(AppDelegate.zoomOut(_:)), keyEquivalent: "-")
+        zoomOut.keyEquivalentModifierMask = [.command]
+        viewMenu.addItem(zoomOut)
+        let zoomReset = NSMenuItem(title: "Actual Size", action: #selector(AppDelegate.zoomReset(_:)), keyEquivalent: "0")
+        zoomReset.keyEquivalentModifierMask = [.command]
+        viewMenu.addItem(zoomReset)
         viewItem.submenu = viewMenu
         main.addItem(viewItem)
 
         return main
     }
+
+    @objc func zoomIn(_ sender: Any?)    { NotificationCenter.default.post(name: .zoomRequested, object: "in") }
+    @objc func zoomOut(_ sender: Any?)   { NotificationCenter.default.post(name: .zoomRequested, object: "out") }
+    @objc func zoomReset(_ sender: Any?) { NotificationCenter.default.post(name: .zoomRequested, object: "reset") }
 
     @objc func selectTheme(_ sender: NSMenuItem) {
         guard let raw = sender.representedObject as? String, let theme = Theme(rawValue: raw) else { return }
