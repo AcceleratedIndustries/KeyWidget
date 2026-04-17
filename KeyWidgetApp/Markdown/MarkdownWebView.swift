@@ -126,8 +126,15 @@ final class DropAwareWebView: WKWebView {
         return super.draggingEntered(sender)
     }
 
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        if !fileURLs(from: sender).isEmpty { return .copy }
+        return super.draggingUpdated(sender)
+    }
+
     override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        fileURLs(from: sender).isEmpty == false || super.prepareForDragOperation(sender)
+        let ok = !fileURLs(from: sender).isEmpty
+        log.info("prepareForDragOperation -> \(ok, privacy: .public)")
+        return ok || super.prepareForDragOperation(sender)
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {

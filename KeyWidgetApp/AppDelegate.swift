@@ -11,7 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let log = Logger(subsystem: "com.williamappleton.keywidget", category: "AppDelegate")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.mainMenu = Self.buildMenu()
+        NSApp.mainMenu = buildMenu()
 
         let vc = MainContentViewController()
         let window = NSWindow(contentViewController: vc)
@@ -48,6 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func openFileMenu(_ sender: Any?) {
+        log.info("openFileMenu invoked")
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [
             UTType(filenameExtension: "md")!,
@@ -57,9 +58,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ]
         panel.allowsMultipleSelection = true
         panel.begin { [weak self] response in
+            self?.log.info("NSOpenPanel response=\(response.rawValue, privacy: .public) urls=\(panel.urls.map(\.path), privacy: .public)")
             guard response == .OK else { return }
             for url in panel.urls {
-                _ = self?.tabController.openFile(at: url)
+                let result = self?.tabController.openFile(at: url)
+                self?.log.info("openFile \(url.path, privacy: .public) -> \(result?.id.uuidString ?? "nil", privacy: .public)")
             }
             NotificationCenter.default.post(name: .tabsDidChange, object: nil)
         }
@@ -90,14 +93,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         log.info("created preferences window")
     }
 
-    private static func buildMenu() -> NSMenu {
+    private func buildMenu() -> NSMenu {
         let main = NSMenu()
 
         // App menu
         let appMenuItem = NSMenuItem()
         let appMenu = NSMenu()
-        let prefsItem = NSMenuItem(title: "Preferences…", action: #selector(AppDelegate.showPreferences(_:)), keyEquivalent: ",")
+        let prefsItem = NSMenuItem(title: "Preferences…", action: #selector(showPreferences(_:)), keyEquivalent: ",")
         prefsItem.keyEquivalentModifierMask = [.command]
+        prefsItem.target = self
         appMenu.addItem(prefsItem)
         appMenu.addItem(.separator())
         let hideItem = NSMenuItem(title: "Hide KeyWidget", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
@@ -112,8 +116,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // File menu
         let fileItem = NSMenuItem()
         let fileMenu = NSMenu(title: "File")
-        fileMenu.addItem(NSMenuItem(title: "Open…", action: #selector(AppDelegate.openFileMenu(_:)), keyEquivalent: "o"))
-        let closeTab = NSMenuItem(title: "Close Tab", action: #selector(AppDelegate.closeTabMenu(_:)), keyEquivalent: "w")
+        let openItem = NSMenuItem(title: "Open…", action: #selector(openFileMenu(_:)), keyEquivalent: "o")
+        openItem.target = self
+        fileMenu.addItem(openItem)
+        let closeTab = NSMenuItem(title: "Close Tab", action: #selector(closeTabMenu(_:)), keyEquivalent: "w")
+        closeTab.target = self
         fileMenu.addItem(closeTab)
         let closeWin = NSMenuItem(title: "Close Window", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
         closeWin.keyEquivalentModifierMask = [.command, .shift]
@@ -124,27 +131,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // View menu
         let viewItem = NSMenuItem()
         let viewMenu = NSMenu(title: "View")
-        let floatItem = NSMenuItem(title: "Float on Top", action: #selector(AppDelegate.toggleFloat), keyEquivalent: "f")
+        let floatItem = NSMenuItem(title: "Float on Top", action: #selector(toggleFloat), keyEquivalent: "f")
         floatItem.keyEquivalentModifierMask = [.control, .option, .command]
+        floatItem.target = self
         viewMenu.addItem(floatItem)
         let themeSubmenu = NSMenu(title: "Theme")
         for theme in Theme.allCases {
-            let mi = NSMenuItem(title: theme.displayName, action: #selector(AppDelegate.selectTheme(_:)), keyEquivalent: "")
+            let mi = NSMenuItem(title: theme.displayName, action: #selector(selectTheme(_:)), keyEquivalent: "")
             mi.representedObject = theme.rawValue
+            mi.target = self
             themeSubmenu.addItem(mi)
         }
         let themeItem = NSMenuItem(title: "Theme", action: nil, keyEquivalent: "")
         themeItem.submenu = themeSubmenu
         viewMenu.addItem(themeItem)
         viewMenu.addItem(.separator())
-        let zoomIn = NSMenuItem(title: "Zoom In", action: #selector(AppDelegate.zoomIn(_:)), keyEquivalent: "+")
+        // Accept ⌘= (same physical key as ⌘+ without shift) and ⌘+ for zoom-in.
+        let zoomIn = NSMenuItem(title: "Zoom In", action: #selector(zoomIn(_:)), keyEquivalent: "=")
         zoomIn.keyEquivalentModifierMask = [.command]
+        zoomIn.target = self
         viewMenu.addItem(zoomIn)
-        let zoomOut = NSMenuItem(title: "Zoom Out", action: #selector(AppDelegate.zoomOut(_:)), keyEquivalent: "-")
+        let zoomInShift = NSMenuItem(title: "Zoom In", action: #selector(zoomIn(_:)), keyEquivalent: "+")
+        zoomInShift.keyEquivalentModifierMask = [.command, .shift]
+        zoomInShift.isAlternate = true
+        zoomInShift.isHidden = true
+        zoomInShift.target = self
+        viewMenu.addItem(zoomInShift)
+        let zoomOut = NSMenuItem(title: "Zoom Out", action: #selector(zoomOut(_:)), keyEquivalent: "-")
         zoomOut.keyEquivalentModifierMask = [.command]
+        zoomOut.target = self
         viewMenu.addItem(zoomOut)
-        let zoomReset = NSMenuItem(title: "Actual Size", action: #selector(AppDelegate.zoomReset(_:)), keyEquivalent: "0")
+        let zoomReset = NSMenuItem(title: "Actual Size", action: #selector(zoomReset(_:)), keyEquivalent: "0")
         zoomReset.keyEquivalentModifierMask = [.command]
+        zoomReset.target = self
         viewMenu.addItem(zoomReset)
         viewItem.submenu = viewMenu
         main.addItem(viewItem)

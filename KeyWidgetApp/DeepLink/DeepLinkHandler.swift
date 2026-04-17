@@ -13,10 +13,20 @@ enum DeepLinkHandler {
             return
         }
         let bringWindowForward: () -> Void = {
+            log.info("bringWindowForward, isActive=\(NSApp.isActive, privacy: .public)")
             NSApp.activate(ignoringOtherApps: true)
             if let window = (NSApp.delegate as? AppDelegate)?.mainWindow {
+                log.info("window state: visible=\(window.isVisible, privacy: .public) min=\(window.isMiniaturized, privacy: .public) key=\(window.isKeyWindow, privacy: .public)")
                 if window.isMiniaturized { window.deminiaturize(nil) }
                 window.makeKeyAndOrderFront(nil)
+                // In newer macOS the foreground activation sometimes drops on the floor unless
+                // dispatched again after a run-loop tick.
+                DispatchQueue.main.async {
+                    NSApp.activate(ignoringOtherApps: true)
+                    window.orderFrontRegardless()
+                }
+            } else {
+                log.error("no mainWindow")
             }
         }
         switch link {
