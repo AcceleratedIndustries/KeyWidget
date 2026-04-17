@@ -36,9 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let window = NSWindow(contentViewController: vc)
         window.setContentSize(NSSize(width: 720, height: 560))
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
-        let ver = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
-        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
-        window.title = "KeyWidget  v\(ver) · build \(build)"
+        window.title = "KeyWidget"
         window.center()
         window.makeKeyAndOrderFront(nil)
         self.mainWindow = window
@@ -170,6 +168,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fileItem.submenu = fileMenu
         main.addItem(fileItem)
 
+        // Edit menu
+        let editItem = NSMenuItem()
+        let editMenu = NSMenu(title: "Edit")
+        let findItem = NSMenuItem(title: "Find…", action: #selector(findInDocument(_:)), keyEquivalent: "f")
+        findItem.keyEquivalentModifierMask = [.command]
+        findItem.target = self
+        editMenu.addItem(findItem)
+        editItem.submenu = editMenu
+        main.addItem(editItem)
+
         // View menu
         let viewItem = NSMenuItem()
         let viewMenu = NSMenu(title: "View")
@@ -218,6 +226,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if NSApp.mainMenu !== menu {
             NSApp.mainMenu = menu
         }
+    }
+
+    @objc func findInDocument(_ sender: Any?) {
+        NotificationCenter.default.post(name: .findRequested, object: nil)
     }
 
     @objc func zoomIn(_ sender: Any?) {

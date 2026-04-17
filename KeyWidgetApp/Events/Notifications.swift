@@ -5,4 +5,5 @@ extension Notification.Name {
     static let themeDidChange = Notification.Name("keywidget.themeDidChange")
     static let floatDidChange = Notification.Name("keywidget.floatDidChange")
     static let zoomRequested = Notification.Name("keywidget.zoomRequested")
+    static let findRequested = Notification.Name("keywidget.findRequested")
 }

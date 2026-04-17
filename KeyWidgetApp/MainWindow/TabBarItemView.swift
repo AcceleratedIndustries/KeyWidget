@@ -109,7 +109,6 @@ extension TabBarItemView: NSDraggingSource {
             }
         }
         if !NSPointInRect(screenPoint, window.frame) {
-            NSAnimationEffect.poof.show(centeredAt: screenPoint, size: NSSize(width: 32, height: 32))
             onClose?()
         }
     }

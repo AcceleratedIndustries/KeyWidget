@@ -69,6 +69,10 @@ final class MainContentViewController: NSViewController {
             self, selector: #selector(handleZoom(_:)),
             name: .zoomRequested, object: nil
         )
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(handleFind),
+            name: .findRequested, object: nil
+        )
         reload()
         NotificationCenter.default.addObserver(
             self, selector: #selector(reload),
@@ -83,6 +87,10 @@ final class MainContentViewController: NSViewController {
         case "reset": markdownView.zoomReset()
         default:      break
         }
+    }
+
+    @objc private func handleFind() {
+        markdownView.showFindBar()
     }
 
     @objc private func themeChanged() {

@@ -7,7 +7,7 @@ See also: [gotchas.md](gotchas.md) for hard-won technical notes.
 ## Quick wins
 
 - **Strip diagnostic logs.** We left `os.Logger` calls all over — in `AppDelegate`, `DeepLinkHandler`, `TabController`, `MainContentViewController`, `MarkdownWebView`, `DropAwareWebView`. Useful while debugging, noisy in Console now that everything works. Safe to trim down to errors only.
-- **Bump `CFBundleVersion` in `project.yml`** on each meaningful commit. The window title shows it (`KeyWidget v0.1.0 · build N`). Keep the habit — it's how we tell if a rebuild actually picked up.
+- **Bump `CFBundleVersion` in `project.yml`** on each meaningful commit. Must be bumped on BOTH the app and widget targets in lockstep — Xcode warns if they drift. Keep the habit — it's how we tell if a rebuild actually picked up.
 
 ## Features worth considering
 
@@ -21,6 +21,10 @@ See also: [gotchas.md](gotchas.md) for hard-won technical notes.
 
 - **Real app icon.** Current `⌘` on warm paper is serviceable programmer-art. `scripts/gen-icon.swift` is the generator if we want to iterate programmatically; or drop a hand-drawn 1024×1024 in and regenerate sizes.
 - **Float-on-top pin feedback.** Toolbar pin swaps `pin`/`pin.fill` SF Symbols but could pulse briefly on toggle for tactile confirmation.
+
+## Known warnings
+
+- **Drag-to-close has no visual effect.** The old `NSAnimationEffect.poof` was deprecated in macOS 14 and Apple's suggested replacement (`NSCursor.disappearingItemCursor`) is cursor-during-drag, not an animation. A custom fade-out on the drag image is a polish option if we want tactile feedback back.
 
 ## Cleanup lying around
 

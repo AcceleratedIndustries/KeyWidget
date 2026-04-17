@@ -5,6 +5,7 @@ import os
 
 final class MarkdownWebView: NSView, WKNavigationDelegate {
     let webView: DropAwareWebView
+    private let findBar = FindBar()
     private let renderer = MarkdownRenderer()
     private var currentTheme: Theme = .iaWriter
     private let log = Logger(subsystem: "com.williamappleton.keywidget", category: "MarkdownWebView")
@@ -16,22 +17,74 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
         config.defaultWebpagePreferences.allowsContentJavaScript = true
         self.webView = DropAwareWebView(frame: .zero, configuration: config)
         super.init(frame: frameRect)
-        addSubview(webView)
+
+        findBar.translatesAutoresizingMaskIntoConstraints = false
+        findBar.isHidden = true
         webView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(findBar)
+        addSubview(webView)
         NSLayoutConstraint.activate([
+            findBar.leadingAnchor.constraint(equalTo: leadingAnchor),
+            findBar.trailingAnchor.constraint(equalTo: trailingAnchor),
+            findBar.topAnchor.constraint(equalTo: topAnchor),
             webView.leadingAnchor.constraint(equalTo: leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            webView.topAnchor.constraint(equalTo: topAnchor),
             webView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
+        updateWebViewTopConstraint()
+
         if #available(macOS 12.0, *) {
             webView.underPageBackgroundColor = .clear
         }
         webView.navigationDelegate = self
         webView.onFileDrop = { [weak self] urls in self?.onDrop?(urls) }
+
+        findBar.onQueryChange = { [weak self] q in self?.search(q, backwards: false, startOver: true) }
+        findBar.onNext = { [weak self] in self?.search(self?.findBar.query ?? "", backwards: false, startOver: false) }
+        findBar.onPrev = { [weak self] in self?.search(self?.findBar.query ?? "", backwards: true, startOver: false) }
+        findBar.onClose = { [weak self] in self?.hideFindBar() }
     }
 
     required init?(coder: NSCoder) { fatalError() }
+
+    private var webViewTopConstraint: NSLayoutConstraint?
+
+    private func updateWebViewTopConstraint() {
+        webViewTopConstraint?.isActive = false
+        let anchor = findBar.isHidden ? topAnchor : findBar.bottomAnchor
+        let c = webView.topAnchor.constraint(equalTo: anchor)
+        c.isActive = true
+        webViewTopConstraint = c
+    }
+
+    func showFindBar() {
+        findBar.isHidden = false
+        updateWebViewTopConstraint()
+        findBar.focus()
+    }
+
+    func hideFindBar() {
+        findBar.isHidden = true
+        updateWebViewTopConstraint()
+        findBar.setStatus("")
+        // Clear WKWebView highlight by searching for an empty string
+        webView.evaluateJavaScript("window.getSelection().removeAllRanges()", completionHandler: nil)
+        window?.makeFirstResponder(webView)
+    }
+
+    private func search(_ query: String, backwards: Bool, startOver: Bool) {
+        guard !query.isEmpty else {
+            findBar.setStatus("")
+            return
+        }
+        let config = WKFindConfiguration()
+        config.backwards = backwards
+        config.wraps = true
+        config.caseSensitive = false
+        webView.find(query, configuration: config) { [weak self] result in
+            self?.findBar.setStatus(result.matchFound ? "" : "Not found")
+        }
+    }
 
     func zoomIn()   { webView.pageZoom = min(webView.pageZoom + 0.1, 3.0) }
     func zoomOut()  { webView.pageZoom = max(webView.pageZoom - 0.1, 0.5) }

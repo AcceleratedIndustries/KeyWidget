@@ -73,3 +73,19 @@
 | Select to line end | `⌘` `⇧` `→` |
 | Select word | `⌥` `⇧` `←` / `→` |
 | Delete word left | `⌥` `⌫` |
+| Delete to line start | `⌘` `⌫` |
+
+## Accessibility & misc
+
+| Action | Shortcut |
+|---|---|
+| Zoom in / out | `⌘` `+` / `-` |
+| Reset zoom | `⌘` `0` |
+| Emoji & symbols | `⌃` `⌘` `Space` |
+| Dictation | `fn` `fn` |
+| Siri | `⌘` `Space` (hold) |
+| Notification Centre | `⌘` `N` |
+| Save | `⌘` `S` |
+| Save as | `⌘` `⇧` `S` |
+| Print | `⌘` `P` |
+| Preferences | `⌘` `,` |
