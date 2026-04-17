@@ -1,5 +1,6 @@
 import AppKit
 import KeyWidgetShared
+import SwiftUI
 import UniformTypeIdentifiers
 
 @MainActor
@@ -65,8 +66,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.post(name: .closeActiveTabRequested, object: nil)
     }
 
+    private var preferencesWindow: NSWindow?
+
     @objc func showPreferences(_ sender: Any?) {
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        // Try SwiftUI's Settings scene first (macOS 14+).
+        if NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) {
+            return
+        }
+        // Manual fallback — works even when the custom main menu breaks
+        // the responder-chain route SwiftUI usually installs.
+        if let w = preferencesWindow {
+            NSApp.activate(ignoringOtherApps: true)
+            w.makeKeyAndOrderFront(nil)
+            return
+        }
+        let host = NSHostingController(rootView: PreferencesView())
+        let win = NSWindow(contentViewController: host)
+        win.title = "Preferences"
+        win.styleMask = [.titled, .closable]
+        win.center()
+        win.isReleasedWhenClosed = false
+        NSApp.activate(ignoringOtherApps: true)
+        win.makeKeyAndOrderFront(nil)
+        preferencesWindow = win
     }
 
     private static func buildMenu() -> NSMenu {
