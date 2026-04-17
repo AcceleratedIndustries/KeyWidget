@@ -10,9 +10,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let tabController = TabController()
     private let log = Logger(subsystem: "com.williamappleton.keywidget", category: "AppDelegate")
 
+    private var customMenu: NSMenu?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         log.info("applicationDidFinishLaunching self=\(ObjectIdentifier(self).hashValue, privacy: .public)")
-        NSApp.mainMenu = buildMenu()
+        let menu = buildMenu()
+        customMenu = menu
+        NSApp.mainMenu = menu
+
+        // SwiftUI's Settings scene replaces NSApp.mainMenu when the settings window
+        // is invoked, removing our custom items. Reinstate our menu whenever any
+        // window becomes key — cheap and idempotent.
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(restoreMainMenuIfNeeded),
+            name: NSWindow.didBecomeKeyNotification, object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(restoreMainMenuIfNeeded),
+            name: NSWindow.didResignKeyNotification, object: nil
+        )
 
         let vc = MainContentViewController()
         let window = NSWindow(contentViewController: vc)
@@ -197,6 +213,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         main.addItem(viewItem)
 
         return main
+    }
+
+    @objc func restoreMainMenuIfNeeded() {
+        guard let menu = customMenu else { return }
+        if NSApp.mainMenu !== menu {
+            log.info("restoring custom main menu")
+            NSApp.mainMenu = menu
+        }
     }
 
     @objc func zoomIn(_ sender: Any?) {
