@@ -77,3 +77,4 @@ targets:
         SKIP_INSTALL: YES
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_STYLE: Automatic
+        ENABLE_DEBUG_DYLIB: NO
