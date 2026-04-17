@@ -34,8 +34,16 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
         self.currentTheme = theme
         let body = renderer.render(markdown: markdown)
         let html = Self.wrap(body: body, theme: theme)
-        log.info("loading HTML (\(html.count, privacy: .public) bytes) baseURL=\(baseURL?.absoluteString ?? "nil", privacy: .public)")
-        webView.loadHTMLString(html, baseURL: baseURL)
+        do {
+            let tmpDir = FileManager.default.temporaryDirectory
+            let fileURL = tmpDir.appendingPathComponent("keywidget-render.html")
+            try html.write(to: fileURL, atomically: true, encoding: .utf8)
+            let accessRoot = baseURL ?? tmpDir
+            log.info("loadFileURL \(fileURL.path, privacy: .public) accessRoot=\(accessRoot.path, privacy: .public)")
+            webView.loadFileURL(fileURL, allowingReadAccessTo: accessRoot)
+        } catch {
+            log.error("write HTML failed: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     func apply(theme: Theme) {
