@@ -1,11 +1,13 @@
 import AppKit
 import KeyWidgetShared
+import os
 import UniformTypeIdentifiers
 
 @MainActor
 final class MainContentViewController: NSViewController {
     private let store = SharedStore()
     private var state: Store = .defaultStore
+    private let log = Logger(subsystem: "com.williamappleton.keywidget", category: "MainVC")
 
     private let tabBar = TabBarView()
     private let markdownView = MarkdownWebView()
@@ -42,8 +44,12 @@ final class MainContentViewController: NSViewController {
         container.registerForDraggedTypes([.fileURL])
         let handleDrop: ([URL]) -> Void = { [weak self] urls in
             guard let self else { return }
+            self.log.info("handleDrop \(urls.count, privacy: .public) urls")
             let controller = (NSApp.delegate as? AppDelegate)?.tabController
-            for url in urls { _ = controller?.openFile(at: url) }
+            for url in urls {
+                let result = controller?.openFile(at: url)
+                self.log.info("handleDrop openFile \(url.path, privacy: .public) -> \(result?.id.uuidString ?? "nil", privacy: .public)")
+            }
             self.reload()
         }
         container.onDrop = handleDrop
@@ -103,6 +109,7 @@ final class MainContentViewController: NSViewController {
 
     @objc private func reload() {
         state = store.load()
+        log.info("reload: \(self.state.tabs.count, privacy: .public) tabs, visible=\(self.visibleTabs().count, privacy: .public), active=\(self.state.activeTabID.uuidString, privacy: .public)")
         tabBar.setTabs(visibleTabs(), activeID: state.activeTabID)
         if visibleTabs().isEmpty {
             showEmptyState()

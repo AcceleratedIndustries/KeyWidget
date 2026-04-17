@@ -199,9 +199,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return main
     }
 
-    @objc func zoomIn(_ sender: Any?)    { NotificationCenter.default.post(name: .zoomRequested, object: "in") }
-    @objc func zoomOut(_ sender: Any?)   { NotificationCenter.default.post(name: .zoomRequested, object: "out") }
-    @objc func zoomReset(_ sender: Any?) { NotificationCenter.default.post(name: .zoomRequested, object: "reset") }
+    @objc func zoomIn(_ sender: Any?) {
+        log.info("zoomIn fired")
+        NotificationCenter.default.post(name: .zoomRequested, object: "in")
+    }
+    @objc func zoomOut(_ sender: Any?) {
+        log.info("zoomOut fired")
+        NotificationCenter.default.post(name: .zoomRequested, object: "out")
+    }
+    @objc func zoomReset(_ sender: Any?) {
+        log.info("zoomReset fired")
+        NotificationCenter.default.post(name: .zoomRequested, object: "reset")
+    }
 
     @objc func selectTheme(_ sender: NSMenuItem) {
         guard let raw = sender.representedObject as? String, let theme = Theme(rawValue: raw) else { return }
