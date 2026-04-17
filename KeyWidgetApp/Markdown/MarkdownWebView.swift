@@ -1,11 +1,13 @@
 import AppKit
 import WebKit
 import KeyWidgetShared
+import os
 
-final class MarkdownWebView: NSView {
+final class MarkdownWebView: NSView, WKNavigationDelegate {
     let webView: WKWebView
     private let renderer = MarkdownRenderer()
     private var currentTheme: Theme = .iaWriter
+    private let log = Logger(subsystem: "com.williamappleton.keywidget", category: "MarkdownWebView")
 
     override init(frame frameRect: NSRect) {
         let config = WKWebViewConfiguration()
@@ -20,7 +22,10 @@ final class MarkdownWebView: NSView {
             webView.topAnchor.constraint(equalTo: topAnchor),
             webView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
-        webView.setValue(false, forKey: "drawsBackground")
+        if #available(macOS 12.0, *) {
+            webView.underPageBackgroundColor = .clear
+        }
+        webView.navigationDelegate = self
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -29,15 +34,28 @@ final class MarkdownWebView: NSView {
         self.currentTheme = theme
         let body = renderer.render(markdown: markdown)
         let html = Self.wrap(body: body, theme: theme)
-        webView.loadHTMLString(html, baseURL: baseURL ?? Bundle.main.resourceURL)
+        log.info("loading HTML (\(html.count, privacy: .public) bytes) baseURL=\(baseURL?.absoluteString ?? "nil", privacy: .public)")
+        webView.loadHTMLString(html, baseURL: baseURL)
     }
 
     func apply(theme: Theme) {
         self.currentTheme = theme
-        let js = """
-        document.body.className = 'theme-\(theme.rawValue)';
-        """
+        let js = "document.body.className = 'theme-\(theme.rawValue)';"
         webView.evaluateJavaScript(js, completionHandler: nil)
+    }
+
+    // MARK: - WKNavigationDelegate
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        log.info("didFinish")
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        log.error("didFail: \(error.localizedDescription, privacy: .public)")
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        log.error("didFailProvisional: \(error.localizedDescription, privacy: .public)")
     }
 
     private static func wrap(body: String, theme: Theme) -> String {
