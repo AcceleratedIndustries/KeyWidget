@@ -38,6 +38,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
+    // Delivered when the app is already running and macOS routes a keywidget:// URL to it.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls { DeepLinkHandler.handle(url) }
+    }
+
     @objc func openFileMenu(_ sender: Any?) {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [

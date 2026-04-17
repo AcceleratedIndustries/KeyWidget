@@ -110,6 +110,13 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
 final class DropAwareWebView: WKWebView {
     var onFileDrop: (([URL]) -> Void)?
 
+    override init(frame frameRect: NSRect, configuration: WKWebViewConfiguration) {
+        super.init(frame: frameRect, configuration: configuration)
+        registerForDraggedTypes([.fileURL])
+    }
+
+    @available(*, unavailable) required init?(coder: NSCoder) { fatalError() }
+
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
         if sender.draggingPasteboard.canReadObject(forClasses: [NSURL.self], options: nil),
            fileURLs(from: sender).isEmpty == false {
