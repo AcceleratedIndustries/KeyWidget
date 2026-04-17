@@ -1,5 +1,6 @@
 import AppKit
 import KeyWidgetShared
+import os
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -7,6 +8,7 @@ import UniformTypeIdentifiers
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var mainWindow: NSWindow?
     let tabController = TabController()
+    private let log = Logger(subsystem: "com.williamappleton.keywidget", category: "AppDelegate")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = Self.buildMenu()
@@ -41,6 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Delivered when the app is already running and macOS routes a keywidget:// URL to it.
     func application(_ application: NSApplication, open urls: [URL]) {
+        log.info("application(open:) urls=\(urls.map(\.absoluteString), privacy: .public)")
         for url in urls { DeepLinkHandler.handle(url) }
     }
 
@@ -69,12 +72,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var preferencesWindow: NSWindow?
 
     @objc func showPreferences(_ sender: Any?) {
-        // Try SwiftUI's Settings scene first (macOS 14+).
-        if NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) {
-            return
-        }
-        // Manual fallback — works even when the custom main menu breaks
-        // the responder-chain route SwiftUI usually installs.
+        log.info("showPreferences invoked")
         if let w = preferencesWindow {
             NSApp.activate(ignoringOtherApps: true)
             w.makeKeyAndOrderFront(nil)
@@ -89,6 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         win.makeKeyAndOrderFront(nil)
         preferencesWindow = win
+        log.info("created preferences window")
     }
 
     private static func buildMenu() -> NSMenu {

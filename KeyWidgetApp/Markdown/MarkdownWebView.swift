@@ -109,19 +109,20 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
 /// methods directly on the WKWebView subclass.
 final class DropAwareWebView: WKWebView {
     var onFileDrop: (([URL]) -> Void)?
+    private let log = Logger(subsystem: "com.williamappleton.keywidget", category: "DropAwareWebView")
 
     override init(frame frameRect: NSRect, configuration: WKWebViewConfiguration) {
         super.init(frame: frameRect, configuration: configuration)
         registerForDraggedTypes([.fileURL])
+        log.info("registered types after init: \(self.registeredDraggedTypes.map(\.rawValue), privacy: .public)")
     }
 
     @available(*, unavailable) required init?(coder: NSCoder) { fatalError() }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        if sender.draggingPasteboard.canReadObject(forClasses: [NSURL.self], options: nil),
-           fileURLs(from: sender).isEmpty == false {
-            return .copy
-        }
+        let urls = fileURLs(from: sender)
+        log.info("draggingEntered urls=\(urls.map(\.path), privacy: .public)")
+        if !urls.isEmpty { return .copy }
         return super.draggingEntered(sender)
     }
 
@@ -131,6 +132,7 @@ final class DropAwareWebView: WKWebView {
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         let urls = fileURLs(from: sender)
+        log.info("performDragOperation urls=\(urls.map(\.path), privacy: .public)")
         if !urls.isEmpty {
             onFileDrop?(urls)
             return true
