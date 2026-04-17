@@ -1,0 +1,125 @@
+
+<style>
+  .sheet { padding: 1rem 0; font-family: var(--font-sans); }
+  .section { margin-bottom: 1.75rem; }
+  .section-title { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 8px; }
+  .rows { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; }
+  .row { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .row:last-child { border-bottom: none; }
+  .desc { font-size: 13px; color: var(--color-text-primary); }
+  .keys { display: flex; gap: 4px; align-items: center; flex-shrink: 0; margin-left: 16px; }
+  kbd { display: inline-block; font-family: var(--font-mono); font-size: 11px; color: var(--color-text-primary); background: var(--color-background-secondary); border: 0.5px solid var(--color-border-secondary); border-radius: 5px; padding: 2px 6px; line-height: 1.5; white-space: nowrap; }
+  .plus { font-size: 11px; color: var(--color-text-tertiary); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 2rem; }
+  @media (max-width: 560px) { .cols { grid-template-columns: 1fr; } }
+</style>
+
+<div class="sheet">
+  <h2 style="sr-only">macOS keyboard shortcut cheat sheet</h2>
+
+  <div class="cols">
+
+    <div>
+      <div class="section">
+        <p class="section-title">System</p>
+        <div class="rows">
+          <div class="row"><span class="desc">Spotlight search</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>Space</kbd></span></div>
+          <div class="row"><span class="desc">Lock screen</span><span class="keys"><kbd>⌃</kbd><span class="plus">+</span><kbd>⌘</kbd><span class="plus">+</span><kbd>Q</kbd></span></div>
+          <div class="row"><span class="desc">Sleep display</span><span class="keys"><kbd>⌃</kbd><span class="plus">+</span><kbd>⇧</kbd><span class="plus">+</span><kbd>⏏</kbd></span></div>
+          <div class="row"><span class="desc">Force quit app</span><span class="keys"><kbd>⌥</kbd><span class="plus">+</span><kbd>⌘</kbd><span class="plus">+</span><kbd>Esc</kbd></span></div>
+          <div class="row"><span class="desc">Screenshot (full)</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>⇧</kbd><span class="plus">+</span><kbd>3</kbd></span></div>
+          <div class="row"><span class="desc">Screenshot (selection)</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>⇧</kbd><span class="plus">+</span><kbd>4</kbd></span></div>
+          <div class="row"><span class="desc">Screenshot toolbar</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>⇧</kbd><span class="plus">+</span><kbd>5</kbd></span></div>
+          <div class="row"><span class="desc">Show/hide Dock</span><span class="keys"><kbd>⌥</kbd><span class="plus">+</span><kbd>⌘</kbd><span class="plus">+</span><kbd>D</kbd></span></div>
+          <div class="row"><span class="desc">Mission Control</span><span class="keys"><kbd>⌃</kbd><span class="plus">+</span><kbd>↑</kbd></span></div>
+          <div class="row"><span class="desc">App Exposé</span><span class="keys"><kbd>⌃</kbd><span class="plus">+</span><kbd>↓</kbd></span></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <p class="section-title">Finder</p>
+        <div class="rows">
+          <div class="row"><span class="desc">New Finder window</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>N</kbd></span></div>
+          <div class="row"><span class="desc">New folder</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>⇧</kbd><span class="plus">+</span><kbd>N</kbd></span></div>
+          <div class="row"><span class="desc">Open selected item</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>O</kbd></span></div>
+          <div class="row"><span class="desc">Get Info</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>I</kbd></span></div>
+          <div class="row"><span class="desc">Quick Look</span><span class="keys"><kbd>Space</kbd></span></div>
+          <div class="row"><span class="desc">Move to Trash</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>⌫</kbd></span></div>
+          <div class="row"><span class="desc">Empty Trash</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>⇧</kbd><span class="plus">+</span><kbd>⌫</kbd></span></div>
+          <div class="row"><span class="desc">Show/hide hidden files</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>⇧</kbd><span class="plus">+</span><kbd>.</kbd></span></div>
+          <div class="row"><span class="desc">Go to folder</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>⇧</kbd><span class="plus">+</span><kbd>G</kbd></span></div>
+          <div class="row"><span class="desc">Go up a folder</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>↑</kbd></span></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <p class="section-title">Windows & tabs</p>
+        <div class="rows">
+          <div class="row"><span class="desc">New tab</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>T</kbd></span></div>
+          <div class="row"><span class="desc">Close window/tab</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>W</kbd></span></div>
+          <div class="row"><span class="desc">Quit app</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>Q</kbd></span></div>
+          <div class="row"><span class="desc">Hide app</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>H</kbd></span></div>
+          <div class="row"><span class="desc">Minimize window</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>M</kbd></span></div>
+          <div class="row"><span class="desc">Cycle app windows</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>`</kbd></span></div>
+          <div class="row"><span class="desc">Switch apps</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>Tab</kbd></span></div>
+          <div class="row"><span class="desc">Zoom window</span><span class="keys"><kbd>⌃</kbd><span class="plus">+</span><kbd>⌘</kbd><span class="plus">+</span><kbd>F</kbd></span></div>
+          <div class="row"><span class="desc">Next tab</span><span class="keys"><kbd>⌃</kbd><span class="plus">+</span><kbd>Tab</kbd></span></div>
+          <div class="row"><span class="desc">Previous tab</span><span class="keys"><kbd>⌃</kbd><span class="plus">+</span><kbd>⇧</kbd><span class="plus">+</span><kbd>Tab</kbd></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section">
+        <p class="section-title">Editing</p>
+        <div class="rows">
+          <div class="row"><span class="desc">Cut</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>X</kbd></span></div>
+          <div class="row"><span class="desc">Copy</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>C</kbd></span></div>
+          <div class="row"><span class="desc">Paste</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>V</kbd></span></div>
+          <div class="row"><span class="desc">Paste and match style</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>⇧</kbd><span class="plus">+</span><kbd>V</kbd></span></div>
+          <div class="row"><span class="desc">Undo</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>Z</kbd></span></div>
+          <div class="row"><span class="desc">Redo</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>⇧</kbd><span class="plus">+</span><kbd>Z</kbd></span></div>
+          <div class="row"><span class="desc">Select all</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>A</kbd></span></div>
+          <div class="row"><span class="desc">Find</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>F</kbd></span></div>
+          <div class="row"><span class="desc">Find & replace</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>⌥</kbd><span class="plus">+</span><kbd>F</kbd></span></div>
+          <div class="row"><span class="desc">Spell check</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>:</kbd></span></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <p class="section-title">Text navigation</p>
+        <div class="rows">
+          <div class="row"><span class="desc">Beginning of line</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>←</kbd></span></div>
+          <div class="row"><span class="desc">End of line</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>→</kbd></span></div>
+          <div class="row"><span class="desc">Top of document</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>↑</kbd></span></div>
+          <div class="row"><span class="desc">Bottom of document</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>↓</kbd></span></div>
+          <div class="row"><span class="desc">Word left/right</span><span class="keys"><kbd>⌥</kbd><span class="plus">+</span><kbd>←/→</kbd></span></div>
+          <div class="row"><span class="desc">Select to line start</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>⇧</kbd><span class="plus">+</span><kbd>←</kbd></span></div>
+          <div class="row"><span class="desc">Select to line end</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>⇧</kbd><span class="plus">+</span><kbd>→</kbd></span></div>
+          <div class="row"><span class="desc">Select word</span><span class="keys"><kbd>⌥</kbd><span class="plus">+</span><kbd>⇧</kbd><span class="plus">+</span><kbd>←/→</kbd></span></div>
+          <div class="row"><span class="desc">Delete word left</span><span class="keys"><kbd>⌥</kbd><span class="plus">+</span><kbd>⌫</kbd></span></div>
+          <div class="row"><span class="desc">Delete to line start</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>⌫</kbd></span></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <p class="section-title">Accessibility & misc</p>
+        <div class="rows">
+          <div class="row"><span class="desc">Zoom in/out</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>+/-</kbd></span></div>
+          <div class="row"><span class="desc">Reset zoom</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>0</kbd></span></div>
+          <div class="row"><span class="desc">Emoji & symbols</span><span class="keys"><kbd>⌃</kbd><span class="plus">+</span><kbd>⌘</kbd><span class="plus">+</span><kbd>Space</kbd></span></div>
+          <div class="row"><span class="desc">Dictation</span><span class="keys"><kbd>fn</kbd><span class="plus">+</span><kbd>fn</kbd></span></div>
+          <div class="row"><span class="desc">Siri</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>Space</kbd> (hold)</span></div>
+          <div class="row"><span class="desc">Notification Centre</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>N</kbd></span></div>
+          <div class="row"><span class="desc">Save</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>S</kbd></span></div>
+          <div class="row"><span class="desc">Save as</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>⇧</kbd><span class="plus">+</span><kbd>S</kbd></span></div>
+          <div class="row"><span class="desc">Print</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>P</kbd></span></div>
+          <div class="row"><span class="desc">Preferences</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>,</kbd></span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p style="font-size: 12px; color: var(--color-text-tertiary); margin: 0.5rem 0 0;">⌘ Command · ⌥ Option · ⌃ Control · ⇧ Shift · ⌫ Delete · ⏏ Eject</p>
+</div>

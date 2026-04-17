@@ -37,6 +37,9 @@ targets:
         com.apple.security.files.bookmarks.app-scope: true
         com.apple.security.application-groups:
           - group.com.williamappleton.keywidget
+        com.apple.security.network.client: true
+        com.apple.security.cs.allow-jit: true
+        com.apple.security.cs.allow-unsigned-executable-memory: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.williamappleton.keywidget
