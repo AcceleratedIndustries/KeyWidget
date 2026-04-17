@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let log = Logger(subsystem: "com.williamappleton.keywidget", category: "AppDelegate")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        log.info("applicationDidFinishLaunching self=\(ObjectIdentifier(self).hashValue, privacy: .public)")
         NSApp.mainMenu = buildMenu()
 
         let vc = MainContentViewController()
@@ -43,8 +44,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Delivered when the app is already running and macOS routes a keywidget:// URL to it.
     func application(_ application: NSApplication, open urls: [URL]) {
-        log.info("application(open:) urls=\(urls.map(\.absoluteString), privacy: .public)")
-        for url in urls { DeepLinkHandler.handle(url) }
+        log.info("application(open:) self=\(ObjectIdentifier(self).hashValue, privacy: .public) mainWindow=\(self.mainWindow != nil ? "set" : "nil", privacy: .public)")
+        for url in urls { handleDeepLink(url) }
+    }
+
+    private func handleDeepLink(_ url: URL) {
+        guard let link = DeepLink.parse(url) else { return }
+        bringMainWindowForward()
+        if case let .openTab(id) = link {
+            var state = SharedStore().load()
+            if state.tabs.contains(where: { $0.id == id }) {
+                state.activeTabID = id
+                try? SharedStore().save(state)
+                NotificationCenter.default.post(name: .tabsDidChange, object: nil)
+            }
+        }
+    }
+
+    private func bringMainWindowForward() {
+        NSApp.activate(ignoringOtherApps: true)
+        guard let window = mainWindow else {
+            log.error("bringMainWindowForward: mainWindow is nil")
+            return
+        }
+        if window.isMiniaturized { window.deminiaturize(nil) }
+        window.makeKeyAndOrderFront(nil)
+        DispatchQueue.main.async {
+            NSApp.activate(ignoringOtherApps: true)
+            window.orderFrontRegardless()
+        }
     }
 
     @objc func openFileMenu(_ sender: Any?) {
