@@ -15,7 +15,7 @@ enum DeepLinkHandler {
         let bringWindowForward: () -> Void = {
             log.info("bringWindowForward, isActive=\(NSApp.isActive, privacy: .public)")
             NSApp.activate(ignoringOtherApps: true)
-            if let window = (NSApp.delegate as? AppDelegate)?.mainWindow {
+            if let window = AppDelegate.shared?.mainWindow {
                 log.info("window state: visible=\(window.isVisible, privacy: .public) min=\(window.isMiniaturized, privacy: .public) key=\(window.isKeyWindow, privacy: .public)")
                 if window.isMiniaturized { window.deminiaturize(nil) }
                 window.makeKeyAndOrderFront(nil)

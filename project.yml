@@ -24,7 +24,7 @@ targets:
       path: KeyWidgetApp/Info.plist
       properties:
         CFBundleShortVersionString: "0.1.0"
-        CFBundleVersion: "20"
+        CFBundleVersion: "21"
         CFBundleURLTypes:
           - CFBundleURLSchemes: [keywidget]
             CFBundleURLName: com.williamappleton.keywidget.urlscheme

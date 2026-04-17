@@ -6,6 +6,8 @@ import UniformTypeIdentifiers
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    static private(set) var shared: AppDelegate?
+
     var mainWindow: NSWindow?
     let tabController = TabController()
     private let log = Logger(subsystem: "com.williamappleton.keywidget", category: "AppDelegate")
@@ -14,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         log.info("applicationDidFinishLaunching self=\(ObjectIdentifier(self).hashValue, privacy: .public)")
+        AppDelegate.shared = self
         let menu = buildMenu()
         customMenu = menu
         NSApp.mainMenu = menu

@@ -44,8 +44,8 @@ final class MainContentViewController: NSViewController {
         container.registerForDraggedTypes([.fileURL])
         let handleDrop: ([URL]) -> Void = { [weak self] urls in
             guard let self else { return }
-            self.log.info("handleDrop \(urls.count, privacy: .public) urls")
-            let controller = (NSApp.delegate as? AppDelegate)?.tabController
+            let controller = AppDelegate.shared?.tabController
+            self.log.info("handleDrop \(urls.count, privacy: .public) urls, controller=\(controller != nil ? "set" : "nil", privacy: .public)")
             for url in urls {
                 let result = controller?.openFile(at: url)
                 self.log.info("handleDrop openFile \(url.path, privacy: .public) -> \(result?.id.uuidString ?? "nil", privacy: .public)")
@@ -58,7 +58,7 @@ final class MainContentViewController: NSViewController {
         tabBar.onSelect = { [weak self] id in self?.selectTab(id) }
         tabBar.onClose = { [weak self] id in self?.closeTab(id: id) }
         tabBar.onReorder = { [weak self] id, idx in
-            (NSApp.delegate as? AppDelegate)?.tabController.moveTab(id: id, toIndex: idx)
+            AppDelegate.shared?.tabController.moveTab(id: id, toIndex: idx)
             self?.reload()
         }
         NotificationCenter.default.addObserver(
@@ -96,7 +96,7 @@ final class MainContentViewController: NSViewController {
     }
 
     private func closeTab(id: UUID) {
-        let controller = (NSApp.delegate as? AppDelegate)?.tabController
+        let controller = AppDelegate.shared?.tabController
         guard let tab = state.tabs.first(where: { $0.id == id }),
               controller?.canClose(tab) == true else { return }
         controller?.closeTab(id: id)
@@ -163,7 +163,7 @@ final class MainContentViewController: NSViewController {
                 showMarkdown(md, baseURL: nil)
             }
         case .userFile:
-            let controller = (NSApp.delegate as? AppDelegate)?.tabController
+            let controller = AppDelegate.shared?.tabController
             guard let bookmark = tab.bookmark, let url = controller?.resolveBookmark(bookmark) else {
                 showMissing(path: "", tab: tab)
                 return
@@ -225,7 +225,7 @@ final class MainContentViewController: NSViewController {
         panel.allowedContentTypes = [UTType(filenameExtension: "md")!]
         panel.begin { [weak self] response in
             guard response == .OK, let url = panel.url else { return }
-            guard let controller = (NSApp.delegate as? AppDelegate)?.tabController,
+            guard let controller = AppDelegate.shared?.tabController,
                   let bookmark = controller.createBookmark(for: url) else { return }
             var state = self?.store.load() ?? .defaultStore
             if let idx = state.tabs.firstIndex(where: { $0.id == tab.id }) {
