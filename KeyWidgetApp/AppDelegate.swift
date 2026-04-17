@@ -34,7 +34,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let window = NSWindow(contentViewController: vc)
         window.setContentSize(NSSize(width: 720, height: 560))
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
-        window.title = "KeyWidget"
+        let ver = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        window.title = "KeyWidget  v\(ver) · build \(build)"
         window.center()
         window.makeKeyAndOrderFront(nil)
         self.mainWindow = window
