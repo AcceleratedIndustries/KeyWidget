@@ -4,7 +4,7 @@ A reference card for your desktop. Read markdown where you're already working.
 
 > KeyWidget keeps a stack of your most-referenced markdown files one click away — a bundled macOS keybinding cheat sheet by default, and whatever else you drop on it. The app floats on top when you want it to, gets out of the way when you don't, and reads your files from disk so your editor stays the source of truth.
 
-<!-- Screenshots to be added once the app has shippable UI. Bundled cheat sheet, each theme. -->
+![iA Writer theme](docs/screenshots/iA_writer_theme.png)
 
 ## Getting started
 
@@ -33,6 +33,16 @@ Three themes ship by default. Pick one from *View → Theme* or ⌘, to open Pre
 - **Linear** — dark canvas, sharp sans-serif, a whisper of gradient.
 - **iA Writer** — warm paper, serif body, dotted dividers. Default.
 - **Mono** — monospace everywhere, brutalist, hacker-y.
+
+![Linear theme](docs/screenshots/linear_theme.png)
+
+![Mono theme](docs/screenshots/mono_theme.png)
+
+## Preferences
+
+⌘, opens a small panel — theme picker, float-on-top, and an option to hide the bundled cheat sheet once you've added your own files.
+
+![Preferences window](docs/screenshots/prefs_window.png)
 
 ## License
 

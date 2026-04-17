@@ -1,4 +1,4 @@
-body.theme-mono {
+.theme-mono {
     --bg: #0c0c0c;
     --fg: #d4d4c7;
     --fg-secondary: #7fc97f;
@@ -11,7 +11,7 @@ body.theme-mono {
     --font-mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
     --code-bg: #181818;
 }
-body.theme-mono kbd { border: none; background: transparent; padding: 0; }
-body.theme-mono h2::before { content: "# "; color: #666; }
-body.theme-mono table { border-radius: 0; }
-body.theme-mono tr:not(:last-child) td { border-bottom-style: dashed; }
+.theme-mono kbd { border: none; background: transparent; padding: 0; }
+.theme-mono h2::before { content: "# "; color: #666; }
+.theme-mono table { border-radius: 0; }
+.theme-mono tr:not(:last-child) td { border-bottom-style: dashed; }

@@ -15,7 +15,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var customMenu: NSMenu?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        log.info("applicationDidFinishLaunching self=\(ObjectIdentifier(self).hashValue, privacy: .public)")
         AppDelegate.shared = self
         let menu = buildMenu()
         customMenu = menu
@@ -65,7 +64,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Delivered when the app is already running and macOS routes a keywidget:// URL to it.
     func application(_ application: NSApplication, open urls: [URL]) {
-        log.info("application(open:) self=\(ObjectIdentifier(self).hashValue, privacy: .public) mainWindow=\(self.mainWindow != nil ? "set" : "nil", privacy: .public)")
         for url in urls { handleDeepLink(url) }
     }
 
@@ -97,7 +95,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func openFileMenu(_ sender: Any?) {
-        log.info("openFileMenu invoked")
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [
             UTType(filenameExtension: "md")!,
@@ -107,11 +104,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ]
         panel.allowsMultipleSelection = true
         panel.begin { [weak self] response in
-            self?.log.info("NSOpenPanel response=\(response.rawValue, privacy: .public) urls=\(panel.urls.map(\.path), privacy: .public)")
             guard response == .OK else { return }
             for url in panel.urls {
-                let result = self?.tabController.openFile(at: url)
-                self?.log.info("openFile \(url.path, privacy: .public) -> \(result?.id.uuidString ?? "nil", privacy: .public)")
+                _ = self?.tabController.openFile(at: url)
             }
             NotificationCenter.default.post(name: .tabsDidChange, object: nil)
         }
@@ -124,7 +119,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var preferencesWindow: NSWindow?
 
     @objc func showPreferences(_ sender: Any?) {
-        log.info("showPreferences invoked")
         if let w = preferencesWindow {
             NSApp.activate(ignoringOtherApps: true)
             w.makeKeyAndOrderFront(nil)
@@ -139,7 +133,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         win.makeKeyAndOrderFront(nil)
         preferencesWindow = win
-        log.info("created preferences window")
     }
 
     private func buildMenu() -> NSMenu {
@@ -223,21 +216,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func restoreMainMenuIfNeeded() {
         guard let menu = customMenu else { return }
         if NSApp.mainMenu !== menu {
-            log.info("restoring custom main menu")
             NSApp.mainMenu = menu
         }
     }
 
     @objc func zoomIn(_ sender: Any?) {
-        log.info("zoomIn fired")
         NotificationCenter.default.post(name: .zoomRequested, object: "in")
     }
     @objc func zoomOut(_ sender: Any?) {
-        log.info("zoomOut fired")
         NotificationCenter.default.post(name: .zoomRequested, object: "out")
     }
     @objc func zoomReset(_ sender: Any?) {
-        log.info("zoomReset fired")
         NotificationCenter.default.post(name: .zoomRequested, object: "reset")
     }
 

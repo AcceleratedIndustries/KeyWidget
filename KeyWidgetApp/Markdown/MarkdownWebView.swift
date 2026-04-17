@@ -29,7 +29,6 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
         }
         webView.navigationDelegate = self
         webView.onFileDrop = { [weak self] urls in self?.onDrop?(urls) }
-        log.info("MarkdownWebView init, frame=\(NSStringFromRect(frameRect), privacy: .public)")
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -47,7 +46,6 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
             let fileURL = tmpDir.appendingPathComponent("keywidget-render.html")
             try html.write(to: fileURL, atomically: true, encoding: .utf8)
             let accessRoot = baseURL ?? tmpDir
-            log.info("loadFileURL \(fileURL.path, privacy: .public) accessRoot=\(accessRoot.path, privacy: .public)")
             webView.loadFileURL(fileURL, allowingReadAccessTo: accessRoot)
         } catch {
             log.error("write HTML failed: \(error.localizedDescription, privacy: .public)")
@@ -56,15 +54,11 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
 
     func apply(theme: Theme) {
         self.currentTheme = theme
-        let js = "document.body.className = 'theme-\(theme.rawValue)';"
+        let js = "document.documentElement.className = 'theme-\(theme.rawValue)';"
         webView.evaluateJavaScript(js, completionHandler: nil)
     }
 
     // MARK: - WKNavigationDelegate
-
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        log.info("didFinish")
-    }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         log.error("didFail: \(error.localizedDescription, privacy: .public)")
@@ -81,13 +75,13 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
         let monoCSS = readCSS("mono")
         return """
         <!DOCTYPE html>
-        <html>
+        <html class="theme-\(theme.rawValue)">
         <head>
           <meta charset="utf-8"/>
           <meta name="viewport" content="width=device-width,initial-scale=1"/>
           <style>\(sharedCSS)\n\(linearCSS)\n\(iaWriterCSS)\n\(monoCSS)</style>
         </head>
-        <body class="theme-\(theme.rawValue)">
+        <body>
           \(body)
         </body>
         </html>
@@ -109,20 +103,16 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
 /// methods directly on the WKWebView subclass.
 final class DropAwareWebView: WKWebView {
     var onFileDrop: (([URL]) -> Void)?
-    private let log = Logger(subsystem: "com.williamappleton.keywidget", category: "DropAwareWebView")
 
     override init(frame frameRect: NSRect, configuration: WKWebViewConfiguration) {
         super.init(frame: frameRect, configuration: configuration)
         registerForDraggedTypes([.fileURL])
-        log.info("registered types after init: \(self.registeredDraggedTypes.map(\.rawValue), privacy: .public)")
     }
 
     @available(*, unavailable) required init?(coder: NSCoder) { fatalError() }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        let urls = fileURLs(from: sender)
-        log.info("draggingEntered urls=\(urls.map(\.path), privacy: .public)")
-        if !urls.isEmpty { return .copy }
+        if !fileURLs(from: sender).isEmpty { return .copy }
         return super.draggingEntered(sender)
     }
 
@@ -133,13 +123,11 @@ final class DropAwareWebView: WKWebView {
 
     override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
         let ok = !fileURLs(from: sender).isEmpty
-        log.info("prepareForDragOperation -> \(ok, privacy: .public)")
         return ok || super.prepareForDragOperation(sender)
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         let urls = fileURLs(from: sender)
-        log.info("performDragOperation urls=\(urls.map(\.path), privacy: .public)")
         if !urls.isEmpty {
             onFileDrop?(urls)
             return true

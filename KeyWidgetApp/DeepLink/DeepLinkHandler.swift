@@ -7,16 +7,13 @@ enum DeepLinkHandler {
     private static let log = Logger(subsystem: "com.williamappleton.keywidget", category: "DeepLink")
 
     static func handle(_ url: URL) {
-        log.info("handle \(url.absoluteString, privacy: .public)")
         guard let link = DeepLink.parse(url) else {
             log.error("could not parse URL")
             return
         }
         let bringWindowForward: () -> Void = {
-            log.info("bringWindowForward, isActive=\(NSApp.isActive, privacy: .public)")
             NSApp.activate(ignoringOtherApps: true)
             if let window = AppDelegate.shared?.mainWindow {
-                log.info("window state: visible=\(window.isVisible, privacy: .public) min=\(window.isMiniaturized, privacy: .public) key=\(window.isKeyWindow, privacy: .public)")
                 if window.isMiniaturized { window.deminiaturize(nil) }
                 window.makeKeyAndOrderFront(nil)
                 // In newer macOS the foreground activation sometimes drops on the floor unless

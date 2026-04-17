@@ -7,7 +7,6 @@ final class TabController {
     private let log = Logger(subsystem: "com.williamappleton.keywidget", category: "TabController")
 
     func openFile(at url: URL) -> TabRef? {
-        log.info("openFile(at:) \(url.path, privacy: .public) isFileURL=\(url.isFileURL, privacy: .public)")
         let absolute = url.resolvingSymlinksInPath().standardizedFileURL
         var state = store.load()
 
@@ -18,7 +17,6 @@ final class TabController {
             }
             return false
         }) {
-            log.info("openFile found existing tab \(existing.id.uuidString, privacy: .public)")
             state.activeTabID = existing.id
             try? store.save(state)
             return existing
