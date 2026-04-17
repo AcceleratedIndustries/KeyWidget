@@ -3,3 +3,4 @@
 KeyWidget.xcodeproj/
 .build/
 .swiftpm/
+keywidget_testlog.txt
