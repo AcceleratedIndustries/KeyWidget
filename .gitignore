@@ -35,3 +35,6 @@ id_ecdsa*
 notarytool*
 *notary*
 *.app-password
+
+# Local-only release helper (uses gh, expects a clean tree, etc.).
+scripts/release.sh
