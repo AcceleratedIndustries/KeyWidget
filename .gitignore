@@ -3,5 +3,35 @@
 KeyWidget.xcodeproj/
 .build/
 .swiftpm/
+build/
+dist/
 keywidget_testlog.txt
 Build KeyWidget_*.txt
+
+# Certificates, signing material, and private keys — never commit.
+*.certSigningRequest
+*.cer
+*.crt
+*.pem
+*.p12
+*.pfx
+*.mobileprovision
+*.provisionprofile
+*.key
+*.keystore
+*.jks
+*_rsa
+*_dsa
+*_ed25519
+*_ecdsa
+id_rsa*
+id_dsa*
+id_ed25519*
+id_ecdsa*
+*.asc
+*.gpg
+
+# App-specific passwords / notarization credentials.
+notarytool*
+*notary*
+*.app-password

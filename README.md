@@ -20,6 +20,8 @@ Press ⌘R.
 
 The Xcode project is generated from `project.yml` and is gitignored. Run `./bin/gen` whenever you change `project.yml` or add a new target.
 
+To build a signed, notarized `.dmg` for distribution: `./scripts/build-dmg.sh`. See [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md).
+
 ## Philosophy
 
 Reference-first, not editing. You already have a favorite editor — KeyWidget doesn't try to be it. Drop a markdown file on the window and it becomes a tab that stays in sync with your file on disk. No import, no copies, no conflict.
